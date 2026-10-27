@@ -48,7 +48,7 @@ Code should read like a person wrote it: descriptive names, short functions that
 
 - Walrus (`:=`) for check-then-use; `with suppress(...)` over try/except-pass; module-level `logger = getLogger(__name__)`; modern type hints (`X | None`, `list[X]`); f-strings.
 - Comments explain *why*, in one short line. No module essays, no docstrings that narrate what the code already says.
-- Business logic lives in stateless namespace classes, never instantiated: `XxxService`. The public `@classmethod` comes first and reads like a recipe of `cls._step()` calls; `_`-prefixed `@staticmethod` helpers follow below it, in call order. Drop the class noun from method names — `OrderService.place`, not `place_order`. Shared pure utilities stay module-level.
+- Business logic lives in stateless namespace classes, never instantiated: `XxxService`. The public `@classmethod` comes first and reads top-down as a sequence of named steps — extract a step into a helper only when it has substance (a query, a validation, a calculation), not to wrap one or two statements; `_`-prefixed `@staticmethod` helpers follow below it, in call order. Drop the class noun from method names — `OrderService.place`, not `place_order`. Shared pure utilities stay module-level.
 - What stays a function: FastAPI endpoints, dependencies, and single pure utility functions.
 - Routers stay thin: declare auth dependencies, response model, and status code, then call one service method. Input validation lives in Pydantic schemas.
 - Services raise domain exceptions (`OrderNotFound`, `InvalidStatusTransition`); a single exception handler maps them to HTTP responses. Services don't import `HTTPException`.
