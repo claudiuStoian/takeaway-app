@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
 import psycopg
@@ -7,12 +7,20 @@ from alembic import command
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from psycopg import sql
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 
 from app.core.config import AppSettings, settings
 from app.core.db import get_session
 from app.main import app
+from tests.builders import signup_and_login
 
 TEST_DB_NAME = 'takeaway_test'
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
@@ -77,6 +85,63 @@ async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
             yield ac
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def customer(client: AsyncClient) -> dict[str, str]:
+    """Auth headers of a freshly signed-up customer."""
+    return await signup_and_login(client)
+
+
+@pytest.fixture
+async def committed_session(test_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
+    """A session whose commits are real; for tests that need several concurrent sessions."""
+    async with AsyncSession(test_engine, expire_on_commit=False) as session:
+        yield session
+
+
+@pytest.fixture
+async def committed_client(test_engine: AsyncEngine) -> AsyncIterator[AsyncClient]:
+    """A client where each request gets its own session and commits for real.
+
+    Rows it writes are kept, so tests using it must only assert on rows they created.
+    """
+    session_factory = async_sessionmaker(test_engine, expire_on_commit=False)
+
+    async def override_get_session() -> AsyncIterator[AsyncSession]:
+        async with session_factory() as session:
+            try:
+                yield session
+            except BaseException:
+                await session.rollback()
+                raise
+
+    app.dependency_overrides[get_session] = override_get_session
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as ac:
+            yield ac
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope='session')
+def sync_test_engine(migrated_test_db: None) -> Iterator[Engine]:
+    engine = create_engine(test_settings.database_url, poolclass=NullPool)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def sync_db_session(sync_test_engine: Engine) -> Iterator[Session]:
+    """A sync session inside an outer transaction that is always rolled back."""
+    with sync_test_engine.connect() as connection:
+        transaction = connection.begin()
+        session = Session(bind=connection, join_transaction_mode='create_savepoint')
+        try:
+            yield session
+        finally:
+            session.close()
+            transaction.rollback()
 
 
 def _drop_test_db(db_settings: AppSettings) -> None:

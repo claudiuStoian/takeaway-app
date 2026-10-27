@@ -15,3 +15,6 @@ MAX_DELIVERY_ADDRESS_LENGTH = 300
 MIN_PHONE_LENGTH = 6
 MAX_PHONE_LENGTH = 20
 MAX_ORDER_NOTES_LENGTH = 500
+
+# Largest Postgres BIGINT; a bigger id would reach the DB and fail there as a 500.
+MAX_DB_ID = 2**63 - 1

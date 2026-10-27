@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.core.limits import (
+    MAX_DB_ID,
     MAX_DELIVERY_ADDRESS_LENGTH,
     MAX_LINES_PER_ORDER,
     MAX_ORDER_NOTES_LENGTH,
@@ -37,7 +38,7 @@ OrderNotes = Annotated[
 class OrderItemCreate(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
-    menu_item_id: int = Field(ge=1)
+    menu_item_id: int = Field(ge=1, le=MAX_DB_ID)
     quantity: int = Field(ge=1, le=MAX_QUANTITY_PER_ITEM)
 
 
@@ -46,7 +47,7 @@ class OrderCreate(BaseModel):
 
     model_config = ConfigDict(extra='forbid')
 
-    restaurant_id: int = Field(ge=1)
+    restaurant_id: int = Field(ge=1, le=MAX_DB_ID)
     items: list[OrderItemCreate] = Field(min_length=1, max_length=MAX_LINES_PER_ORDER)
     delivery_address: DeliveryAddress
     phone: Phone

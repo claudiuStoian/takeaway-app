@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Query
 
 from app.core.db import SessionDep
+from app.core.limits import MAX_DB_ID
 from app.core.pagination import DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT
 from app.restaurants.schemas import CUISINE_PATTERN, MenuRead, RestaurantPage
 from app.restaurants.service import RestaurantService
@@ -21,5 +22,7 @@ async def list_restaurants(
 
 
 @router.get('/{restaurant_id}/menu', response_model=MenuRead)
-async def get_menu(session: SessionDep, restaurant_id: Annotated[int, Path(ge=1)]) -> MenuRead:
+async def get_menu(
+    session: SessionDep, restaurant_id: Annotated[int, Path(ge=1, le=MAX_DB_ID)]
+) -> MenuRead:
     return await RestaurantService.get_menu(session, restaurant_id)
