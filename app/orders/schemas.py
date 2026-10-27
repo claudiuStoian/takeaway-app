@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
+from app.auth.models import UserRole
 from app.core.limits import (
     MAX_DB_ID,
     MAX_DELIVERY_ADDRESS_LENGTH,
@@ -97,3 +98,36 @@ class OrderRead(BaseModel):
 class OrderPage(BaseModel):
     items: list[OrderRead]
     next_cursor: str | None
+
+
+class OrderStatusChange(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    to: OrderStatus
+
+
+class UserSummaryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    public_id: UUID
+    full_name: str
+    email: str
+    role: UserRole
+
+
+class AdminOrderRead(OrderRead):
+    customer: UserSummaryRead
+
+
+class AdminOrderPage(BaseModel):
+    items: list[AdminOrderRead]
+    next_cursor: str | None
+
+
+class OrderStatusEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    from_status: OrderStatus | None
+    to_status: OrderStatus
+    actor: UserSummaryRead
+    created_at: datetime

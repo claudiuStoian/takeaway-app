@@ -9,6 +9,7 @@ from app.core import health
 from app.core.config import settings
 from app.core.db import engine
 from app.core.exceptions import DomainError, handle_domain_error
+from app.orders import admin_router as admin_orders
 from app.orders import router as orders
 from app.restaurants import router as restaurants
 
@@ -27,6 +28,7 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(restaurants.router, prefix=API_PREFIX)
 app.include_router(orders.router, prefix=API_PREFIX)
+app.include_router(admin_orders.router, prefix=API_PREFIX)
 
 if settings.cors_origins:
     app.add_middleware(

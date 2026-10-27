@@ -4,7 +4,7 @@ Backend for a small takeaway platform. Customers browse restaurants and menus, p
 
 FastAPI · async SQLAlchemy 2 + psycopg 3 · PostgreSQL 18 · Alembic · Pydantic · Docker Compose · Nginx · Python 3.14
 
-> **Status:** public catalogue (restaurants and menus) and accounts (signup, login, roles). Ordering lands next.
+> **Status:** public catalogue, accounts (signup, login, roles), customer orders and admin order handling. Admin menu management lands next.
 
 ## Quick start
 
@@ -40,10 +40,23 @@ curl -s localhost/api/v1/restaurants/1/menu
 |---|---|
 | Catalogue (public) | `GET /api/v1/restaurants` (cursor, `?cuisine=`) · `GET /api/v1/restaurants/{restaurant_id}/menu` |
 | Accounts | `POST /api/v1/auth/signup` · `POST /api/v1/auth/login` · `GET /api/v1/me` |
+| Orders (customer) | `POST /api/v1/orders` (`Idempotency-Key` required) · `GET /api/v1/orders` (mine, cursor) · `GET /api/v1/orders/{public_id}` · `POST /api/v1/orders/{public_id}/cancel` |
+| Admin — orders | `GET /api/v1/admin/orders` (cursor, `?status=`, `?restaurant_id=`) · `POST /api/v1/admin/orders/{public_id}/status` `{"to": "<status>"}` · `GET /api/v1/admin/orders/{public_id}/history` |
 
 Lists return `{"items": [...], "next_cursor": "..."}`; pass `?cursor=` for the next page (`null` = end) and `?limit=` (1–100, default 20). Errors use FastAPI's `{"detail": ...}` shape.
 
 The menu lists only what a customer can order or see: inactive restaurants are `404`, archived categories and items are hidden, and sold-out items stay listed with `"is_available": false`. Money is integer cents (`*_cents`), USD.
+
+### Order lifecycle
+
+```
+pending ──admin──▶ accepted ──admin──▶ out_for_delivery ──admin──▶ delivered
+   │                  │
+   ├─admin─────▶ rejected
+   └─customer──▶ cancelled ◀──admin── (from accepted)
+```
+
+Any other move is `409`, including a repeat of the current status. The status endpoint takes the **target** status, never "next": an admin acting on a stale screen gets `409` instead of skipping a step, and two admins accepting the same order at once get one `200` and one `409`. Every change is recorded with who made it and when (`…/history`).
 
 ## Auth
 
@@ -99,6 +112,7 @@ app/
   core/          config, db session, errors, security (hashing, JWT), pagination, limits, health check
   auth/          users, roles, signup, login, current-user and admin dependencies
   restaurants/   restaurants, categories, menu items
+  orders/        orders, items, status transitions, history; admin routes in admin_router.py
 alembic/         migrations
 seed/            demo data (restaurants.json, users.json)
 nginx/           reverse proxy config

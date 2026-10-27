@@ -20,7 +20,7 @@ from sqlalchemy.pool import NullPool
 from app.core.config import AppSettings, settings
 from app.core.db import get_session
 from app.main import app
-from tests.builders import signup_and_login
+from tests.builders import signup_admin_and_login, signup_and_login
 
 TEST_DB_NAME = 'takeaway_test'
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
@@ -91,6 +91,12 @@ async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
 async def customer(client: AsyncClient) -> dict[str, str]:
     """Auth headers of a freshly signed-up customer."""
     return await signup_and_login(client)
+
+
+@pytest.fixture
+async def admin(client: AsyncClient, db_session: AsyncSession) -> dict[str, str]:
+    """Auth headers of a freshly created admin."""
+    return await signup_admin_and_login(client, db_session)
 
 
 @pytest.fixture

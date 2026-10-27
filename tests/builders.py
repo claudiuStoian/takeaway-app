@@ -1,7 +1,8 @@
 """Test data builders.
 
-Users are created over HTTP. Catalogue rows and order status changes have no API yet, so they are
-built through the ORM here; this is the only test module that knows the table layout.
+Users are created over HTTP; admins are signed up, then promoted through the ORM. Catalogue rows
+have no API yet, so they are built through the ORM here; this is the only test module that knows
+the table layout.
 """
 
 import json
@@ -15,11 +16,24 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from app.auth.models import User
-from app.orders.models import Order, OrderStatus
+from app.auth.models import User, UserRole
+from app.orders.models import OrderStatus
 from app.restaurants.models import MenuCategory, MenuItem, Restaurant
 
 TEST_PASSWORD = 'correct-horse-battery'
+
+ADMIN_PATHS_FROM_PENDING = {
+    OrderStatus.PENDING: [],
+    OrderStatus.ACCEPTED: [OrderStatus.ACCEPTED],
+    OrderStatus.OUT_FOR_DELIVERY: [OrderStatus.ACCEPTED, OrderStatus.OUT_FOR_DELIVERY],
+    OrderStatus.DELIVERED: [
+        OrderStatus.ACCEPTED,
+        OrderStatus.OUT_FOR_DELIVERY,
+        OrderStatus.DELIVERED,
+    ],
+    OrderStatus.REJECTED: [OrderStatus.REJECTED],
+    OrderStatus.CANCELLED: [OrderStatus.ACCEPTED, OrderStatus.CANCELLED],
+}
 
 
 async def signup_and_login(client: AsyncClient, email: str | None = None) -> dict[str, str]:
@@ -34,6 +48,16 @@ async def signup_and_login(client: AsyncClient, email: str | None = None) -> dic
     )
     assert login.status_code == 200, login.text
     return {'Authorization': f"Bearer {login.json()['access_token']}"}
+
+
+async def signup_admin_and_login(
+    client: AsyncClient, session: AsyncSession, email: str | None = None
+) -> dict[str, str]:
+    """There is no admin signup: sign up a customer, then promote them. Commit when committing."""
+    email = email or f'{uuid4()}@example.com'
+    headers = await signup_and_login(client, email)
+    await session.execute(update(User).where(User.email == email).values(role=UserRole.ADMIN))
+    return headers
 
 
 def order_body(restaurant_id: int, lines: list[tuple[int, int]]) -> dict:
@@ -59,6 +83,33 @@ async def place_order(
     return await client.post(
         '/api/v1/orders', json=body, headers={**headers, 'Idempotency-Key': str(key)}
     )
+
+
+async def place_pending_order(
+    client: AsyncClient, session: AsyncSession, customer: dict[str, str]
+) -> str:
+    """Places an order at a fresh restaurant; returns its public id."""
+    item = await add_orderable_item(session)
+    response = await place_order(client, customer, order_body(item.restaurant_id, [(item.id, 1)]))
+    assert response.status_code == 201, response.text
+    return response.json()['public_id']
+
+
+async def change_order_status(
+    client: AsyncClient, admin: dict[str, str], public_id: str, status: OrderStatus
+) -> Response:
+    return await client.post(
+        f'/api/v1/admin/orders/{public_id}/status', json={'to': status}, headers=admin
+    )
+
+
+async def move_order_to(
+    client: AsyncClient, admin: dict[str, str], public_id: str, status: OrderStatus
+) -> None:
+    """Walks a pending order to `status` along the admin flow."""
+    for step in ADMIN_PATHS_FROM_PENDING[status]:
+        response = await change_order_status(client, admin, public_id, step)
+        assert response.status_code == 200, response.text
 
 
 def raw_cursor(values: list) -> str:
@@ -157,13 +208,6 @@ async def deactivate_restaurant(session: AsyncSession, restaurant_id: int) -> No
 
 async def deactivate_user(session: AsyncSession, email: str) -> None:
     await session.execute(update(User).where(User.email == email).values(is_active=False))
-
-
-async def set_order_status(session: AsyncSession, public_id: str, status: OrderStatus) -> None:
-    """Stands in for the admin status route until it exists."""
-    await session.execute(
-        update(Order).where(Order.public_id == UUID(public_id)).values(status=status)
-    )
 
 
 def add_restaurant_sync(session: Session) -> None:

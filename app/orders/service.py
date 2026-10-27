@@ -112,12 +112,12 @@ class OrderService:
     async def list_page(
         cls, session: AsyncSession, customer: User, *, limit: int, cursor: str | None
     ) -> OrderPage:
-        query = cls._build_list_query(customer.id, limit, cursor)
+        query = build_order_list_query([Order.customer_id == customer.id], limit, cursor)
         rows = list(await session.scalars(query))
 
         return OrderPage(
             items=[OrderRead.model_validate(order) for order in rows[:limit]],
-            next_cursor=cls._next_cursor(rows, limit),
+            next_cursor=next_order_cursor(rows, limit),
         )
 
     @classmethod
@@ -133,7 +133,7 @@ class OrderService:
         if (order := await session.scalar(query)) is None:
             raise OrderNotFound
 
-        cls._change_status(session, order, OrderStatus.CANCELLED, customer, CUSTOMER_TRANSITIONS)
+        session.add(transition_order(order, OrderStatus.CANCELLED, customer, CUSTOMER_TRANSITIONS))
         await session.commit()
         return OrderRead.model_validate(order)
 
@@ -144,12 +144,12 @@ class OrderService:
         body['items'] = sorted(body['items'], key=itemgetter('menu_item_id'))
         return sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
-    @classmethod
+    @staticmethod
     async def _find_by_idempotency_key(
-        cls, session: AsyncSession, customer_id: int, idempotency_key: UUID
+        session: AsyncSession, customer_id: int, idempotency_key: UUID
     ) -> Order | None:
         return await session.scalar(
-            cls._build_order_query(
+            build_order_query(
                 Order.customer_id == customer_id, Order.idempotency_key == idempotency_key
             )
         )
@@ -188,71 +188,67 @@ class OrderService:
         return orderable
 
     @staticmethod
-    def _build_order_query(*conditions: ColumnElement[bool]) -> Select:
-        return (
-            select(Order)
-            .where(*conditions)
-            .options(selectinload(Order.items))
-            # Re-read rows the session may already hold, e.g. a status changed under a lock.
-            .execution_options(populate_existing=True)
-        )
-
-    @classmethod
-    def _build_list_query(cls, customer_id: int, limit: int, cursor: str | None) -> Select:
-        query = (
-            cls._build_order_query(Order.customer_id == customer_id)
-            .order_by(Order.created_at.desc(), Order.public_id.desc())
-            # One extra row tells us whether there is a next page.
-            .limit(limit + 1)
-        )
-        if cursor is not None:
-            created_at, public_id = cls._decode_order_cursor(cursor)
-            query = query.where(
-                tuple_(Order.created_at, Order.public_id) < (created_at, public_id)
-            )
-        return query
-
-    @staticmethod
-    def _decode_order_cursor(cursor: str) -> tuple[datetime, UUID]:
-        created_at, public_id = decode_cursor(cursor, expected_types=(str, str))
-        try:
-            return datetime.fromisoformat(created_at), UUID(public_id)
-        except ValueError as exc:
-            raise InvalidCursor from exc
-
-    @staticmethod
-    def _next_cursor(rows: list[Order], limit: int) -> str | None:
-        if len(rows) <= limit:
-            return None
-
-        last_shown = rows[limit - 1]
-        return encode_cursor([last_shown.created_at.isoformat(), str(last_shown.public_id)])
-
-    @classmethod
-    def _build_own_order_query(cls, customer_id: int, public_id: UUID) -> Select:
+    def _build_own_order_query(customer_id: int, public_id: UUID) -> Select:
         # Filtering by owner makes another customer's order indistinguishable from a missing one.
-        return cls._build_order_query(
-            Order.customer_id == customer_id, Order.public_id == public_id
+        return build_order_query(Order.customer_id == customer_id, Order.public_id == public_id)
+
+
+def build_order_query(*conditions: ColumnElement[bool]) -> Select:
+    return (
+        select(Order)
+        .where(*conditions)
+        .options(selectinload(Order.items))
+        # Re-read rows the session may already hold, e.g. a status changed under a lock.
+        .execution_options(populate_existing=True)
+    )
+
+
+def build_order_list_query(
+    conditions: list[ColumnElement[bool]], limit: int, cursor: str | None
+) -> Select:
+    """Newest orders first, keyset-paginated on (created_at, public_id)."""
+    query = (
+        build_order_query(*conditions)
+        .order_by(Order.created_at.desc(), Order.public_id.desc())
+        # One extra row tells us whether there is a next page.
+        .limit(limit + 1)
+    )
+    if cursor is not None:
+        created_at, public_id = decode_order_cursor(cursor)
+        query = query.where(tuple_(Order.created_at, Order.public_id) < (created_at, public_id))
+    return query
+
+
+def decode_order_cursor(cursor: str) -> tuple[datetime, UUID]:
+    created_at, public_id = decode_cursor(cursor, expected_types=(str, str))
+    try:
+        return datetime.fromisoformat(created_at), UUID(public_id)
+    except ValueError as exc:
+        raise InvalidCursor from exc
+
+
+def next_order_cursor(rows: list[Order], limit: int) -> str | None:
+    if len(rows) <= limit:
+        return None
+
+    last_shown = rows[limit - 1]
+    return encode_cursor([last_shown.created_at.isoformat(), str(last_shown.public_id)])
+
+
+def transition_order(
+    order: Order,
+    to_status: OrderStatus,
+    actor: User,
+    allowed_transitions: dict[OrderStatus, set[OrderStatus]],
+) -> OrderStatusEvent:
+    """Moves the order to `to_status`; returns the history event for the caller to add."""
+    if to_status not in allowed_transitions.get(order.status, set()):
+        raise InvalidStatusTransition(
+            f"Cannot change an order from {order.status} to {to_status}."
         )
 
-    @staticmethod
-    def _change_status(
-        session: AsyncSession,
-        order: Order,
-        to_status: OrderStatus,
-        actor: User,
-        allowed_transitions: dict[OrderStatus, set[OrderStatus]],
-    ) -> None:
-        if to_status not in allowed_transitions.get(order.status, set()):
-            raise InvalidStatusTransition(
-                f"Cannot change an order from {order.status} to {to_status}."
-            )
-        session.add(
-            OrderStatusEvent(
-                order_id=order.id,
-                from_status=order.status,
-                to_status=to_status,
-                actor_id=actor.id,
-            )
-        )
-        order.status = to_status
+    event = OrderStatusEvent(
+        order_id=order.id, from_status=order.status, to_status=to_status, actor_id=actor.id
+    )
+    order.status = to_status
+    return event

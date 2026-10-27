@@ -7,9 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.orders.models import OrderStatus
 from tests.builders import (
     add_orderable_item,
+    move_order_to,
     order_body,
     place_order,
-    set_order_status,
+    place_pending_order,
     signup_and_login,
 )
 
@@ -67,10 +68,14 @@ async def test_cancelling_twice_is_409(
     ],
 )
 async def test_customer_cannot_cancel_once_the_order_left_pending(
-    client: AsyncClient, db_session: AsyncSession, customer: dict[str, str], status: OrderStatus
+    client: AsyncClient,
+    db_session: AsyncSession,
+    customer: dict[str, str],
+    admin: dict[str, str],
+    status: OrderStatus,
 ) -> None:
     public_id = await place_pending_order(client, db_session, customer)
-    await set_order_status(db_session, public_id, status)
+    await move_order_to(client, admin, public_id, status)
 
     response = await client.post(f'/api/v1/orders/{public_id}/cancel', headers=customer)
     afterwards = await client.get(f'/api/v1/orders/{public_id}', headers=customer)
@@ -98,12 +103,3 @@ async def test_cancelling_a_missing_order_is_404(
     response = await client.post(f'/api/v1/orders/{uuid4()}/cancel', headers=customer)
 
     assert response.status_code == 404
-
-
-async def place_pending_order(
-    client: AsyncClient, db_session: AsyncSession, customer: dict[str, str]
-) -> str:
-    item = await add_orderable_item(db_session)
-    response = await place_order(client, customer, order_body(item.restaurant_id, [(item.id, 1)]))
-    assert response.status_code == 201, response.text
-    return response.json()['public_id']

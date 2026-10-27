@@ -14,6 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.auth.models import User
 from app.core.db import Base
 
 
@@ -78,6 +79,7 @@ class Order(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
+    customer: Mapped[User] = relationship(lazy='raise')
     items: Mapped[list[OrderItem]] = relationship(lazy='raise', order_by='OrderItem.id')
     status_events: Mapped[list[OrderStatusEvent]] = relationship(
         lazy='raise', order_by='OrderStatusEvent.id'
@@ -115,3 +117,5 @@ class OrderStatusEvent(Base):
     to_status: Mapped[OrderStatus] = mapped_column(status_type('to_status'))
     actor_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('users.id'))
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    actor: Mapped[User] = relationship(lazy='raise')
