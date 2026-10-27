@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# Environment
+.env
+
+# Local agent config
+.claude/
+AGENTS.local.md
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store

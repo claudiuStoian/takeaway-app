@@ -1,0 +1,50 @@
+from enum import StrEnum
+from typing import Self
+
+from pydantic import computed_field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEV_DB_PASSWORD = 'takeaway-dev-password'
+DEV_JWT_SECRET_KEY = 'dev-only-jwt-secret-change-me'
+
+
+class Environment(StrEnum):
+    DEVELOPMENT = 'development'
+    TEST = 'test'
+    PRODUCTION = 'production'
+
+
+class AppSettings(BaseSettings):
+    # Validation errors would otherwise echo the secrets into startup logs.
+    model_config = SettingsConfigDict(frozen=True, hide_input_in_errors=True)
+
+    environment: Environment = Environment.DEVELOPMENT
+
+    db_host: str = 'localhost'
+    db_port: int = 5432
+    db_name: str = 'takeaway'
+    db_user: str = 'takeaway'
+    db_password: str = DEV_DB_PASSWORD
+
+    jwt_secret_key: str = DEV_JWT_SECRET_KEY
+
+    cors_origins: list[str] = []
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        return (
+            f'postgresql+psycopg://{self.db_user}:{self.db_password}'
+            f'@{self.db_host}:{self.db_port}/{self.db_name}'
+        )
+
+    @model_validator(mode='after')
+    def refuse_dev_secrets_in_production(self) -> Self:
+        if self.environment != Environment.PRODUCTION:
+            return self
+        if self.jwt_secret_key == DEV_JWT_SECRET_KEY or self.db_password == DEV_DB_PASSWORD:
+            raise ValueError('Development secrets must be replaced when ENVIRONMENT=production.')
+        return self
+
+
+settings = AppSettings()

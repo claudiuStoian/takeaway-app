@@ -1,0 +1,524 @@
+[
+  {
+    "name": "Basil & Brick",
+    "description": "Wood-fired pizza and fresh pasta made in house every morning.",
+    "cuisine": "italian",
+    "address": "214 Larkspur Ave, Riverton",
+    "delivery_fee_cents": 299,
+    "categories": [
+      {
+        "name": "Antipasti",
+        "items": [
+          {"name": "Garlic Focaccia", "description": "Rosemary, sea salt, olive oil.", "price_cents": 650},
+          {"name": "Burrata", "description": "Heirloom tomatoes, basil, aged balsamic.", "price_cents": 1350},
+          {"name": "Arancini", "description": "Three saffron risotto balls with mozzarella.", "price_cents": 950},
+          {"name": "Calamari Fritti", "description": "Lemon aioli.", "price_cents": 1250}
+        ]
+      },
+      {
+        "name": "Pizza",
+        "items": [
+          {"name": "Margherita", "description": "San Marzano tomato, fior di latte, basil.", "price_cents": 1400},
+          {"name": "Diavola", "description": "Spicy salami, chili oil, mozzarella.", "price_cents": 1650},
+          {"name": "Funghi", "description": "Roasted mushrooms, thyme, fontina.", "price_cents": 1600},
+          {"name": "Quattro Formaggi", "description": "Mozzarella, gorgonzola, fontina, parmesan.", "price_cents": 1700},
+          {"name": "Prosciutto e Rucola", "description": "Prosciutto, arugula, shaved parmesan.", "price_cents": 1800},
+          {"name": "Truffle Bianca", "description": "White truffle cream, mozzarella, chives.", "price_cents": 2200, "is_archived": true}
+        ]
+      },
+      {
+        "name": "Pasta",
+        "items": [
+          {"name": "Spaghetti Carbonara", "description": "Guanciale, egg yolk, pecorino, black pepper.", "price_cents": 1750},
+          {"name": "Rigatoni alla Vodka", "description": "Tomato cream, chili, parmesan.", "price_cents": 1650},
+          {"name": "Tagliatelle Bolognese", "description": "Slow-cooked beef and pork ragu.", "price_cents": 1850},
+          {"name": "Cacio e Pepe", "description": "Tonnarelli, pecorino, black pepper.", "price_cents": 1550},
+          {"name": "Lobster Ravioli", "description": "Brown butter, sage.", "price_cents": 2450, "is_available": false}
+        ]
+      },
+      {
+        "name": "Desserts",
+        "items": [
+          {"name": "Tiramisu", "description": "Espresso, mascarpone, cocoa.", "price_cents": 850},
+          {"name": "Cannoli", "description": "Two shells, ricotta, pistachio.", "price_cents": 750},
+          {"name": "Panna Cotta", "description": "Vanilla bean, berry compote.", "price_cents": 800}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Lantern Ramen House",
+    "description": "Rich broths simmered for eighteen hours and hand-pulled noodles.",
+    "cuisine": "japanese",
+    "address": "88 Mill Street, Riverton",
+    "delivery_fee_cents": 349,
+    "categories": [
+      {
+        "name": "Starters",
+        "items": [
+          {"name": "Edamame", "description": "Sea salt or spicy garlic.", "price_cents": 550},
+          {"name": "Pork Gyoza", "description": "Six pan-fried dumplings.", "price_cents": 850},
+          {"name": "Chicken Karaage", "description": "Japanese fried chicken, yuzu mayo.", "price_cents": 1050},
+          {"name": "Takoyaki", "description": "Octopus balls, bonito flakes.", "price_cents": 950}
+        ]
+      },
+      {
+        "name": "Ramen",
+        "items": [
+          {"name": "Tonkotsu Ramen", "description": "Pork bone broth, chashu, soft egg, nori.", "price_cents": 1695},
+          {"name": "Shoyu Ramen", "description": "Soy chicken broth, chashu, bamboo shoots.", "price_cents": 1595},
+          {"name": "Spicy Miso Ramen", "description": "Miso broth, ground pork, chili, corn.", "price_cents": 1695},
+          {"name": "Vegetable Shio Ramen", "description": "Kombu broth, tofu, seasonal greens.", "price_cents": 1495},
+          {"name": "Black Garlic Ramen", "description": "Tonkotsu with burnt garlic oil.", "price_cents": 1795, "is_available": false}
+        ]
+      },
+      {
+        "name": "Donburi",
+        "items": [
+          {"name": "Chashu Don", "description": "Braised pork belly over rice.", "price_cents": 1395},
+          {"name": "Katsu Don", "description": "Pork cutlet, egg, onion, rice.", "price_cents": 1450},
+          {"name": "Salmon Teriyaki Don", "description": "Glazed salmon, pickles, rice.", "price_cents": 1595}
+        ]
+      },
+      {
+        "name": "Drinks",
+        "items": [
+          {"name": "Ramune", "description": "Japanese marble soda.", "price_cents": 400},
+          {"name": "Iced Matcha", "description": "Lightly sweetened.", "price_cents": 500},
+          {"name": "Yuzu Lemonade", "price_cents": 450}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Casa Marigold",
+    "description": "Street-style tacos, slow-braised meats and fresh salsas.",
+    "cuisine": "mexican",
+    "address": "1502 Cedar Row, Riverton",
+    "delivery_fee_cents": 249,
+    "categories": [
+      {
+        "name": "Antojitos",
+        "items": [
+          {"name": "Chips & Guacamole", "description": "Made to order.", "price_cents": 850},
+          {"name": "Elote", "description": "Grilled corn, cotija, chili-lime mayo.", "price_cents": 600},
+          {"name": "Queso Fundido", "description": "Melted cheese, chorizo, tortillas.", "price_cents": 1050}
+        ]
+      },
+      {
+        "name": "Tacos",
+        "items": [
+          {"name": "Al Pastor Tacos", "description": "Three tacos, pineapple, onion, cilantro.", "price_cents": 1150},
+          {"name": "Carne Asada Tacos", "description": "Three tacos, grilled steak, salsa verde.", "price_cents": 1295},
+          {"name": "Baja Fish Tacos", "description": "Three tacos, crispy cod, cabbage slaw.", "price_cents": 1250},
+          {"name": "Mushroom Tacos", "description": "Three tacos, roasted mushrooms, pepitas.", "price_cents": 1050},
+          {"name": "Birria Tacos", "description": "Three tacos with consomme for dipping.", "price_cents": 1450}
+        ]
+      },
+      {
+        "name": "Burritos & Bowls",
+        "items": [
+          {"name": "Chicken Burrito", "description": "Rice, beans, cheese, pico de gallo.", "price_cents": 1295},
+          {"name": "Carnitas Burrito", "description": "Rice, beans, salsa roja.", "price_cents": 1350},
+          {"name": "Veggie Bowl", "description": "Rice, black beans, fajita vegetables, guacamole.", "price_cents": 1195},
+          {"name": "Steak Bowl", "description": "Rice, pinto beans, corn salsa.", "price_cents": 1450}
+        ]
+      },
+      {
+        "name": "Sides",
+        "items": [
+          {"name": "Mexican Rice", "price_cents": 350},
+          {"name": "Refried Beans", "price_cents": 350},
+          {"name": "Churros", "description": "Cinnamon sugar, chocolate sauce.", "price_cents": 650},
+          {"name": "Horchata", "price_cents": 400}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Saffron Courtyard",
+    "description": "North Indian curries, tandoor breads and slow-cooked biryanis.",
+    "cuisine": "indian",
+    "address": "37 Orchard Lane, Riverton",
+    "delivery_fee_cents": 299,
+    "categories": [
+      {
+        "name": "Starters",
+        "items": [
+          {"name": "Vegetable Samosas", "description": "Two pastries, tamarind chutney.", "price_cents": 650},
+          {"name": "Onion Bhaji", "description": "Crispy fritters, mint yogurt.", "price_cents": 600},
+          {"name": "Chicken Tikka", "description": "Six pieces from the tandoor.", "price_cents": 1150}
+        ]
+      },
+      {
+        "name": "Curries",
+        "items": [
+          {"name": "Butter Chicken", "description": "Tomato, butter, fenugreek.", "price_cents": 1795},
+          {"name": "Lamb Rogan Josh", "description": "Kashmiri chili, slow-cooked lamb.", "price_cents": 1995},
+          {"name": "Chana Masala", "description": "Chickpeas, tomato, ginger.", "price_cents": 1395},
+          {"name": "Palak Paneer", "description": "Spinach, fresh cheese, garlic.", "price_cents": 1595},
+          {"name": "Goan Fish Curry", "description": "Coconut, tamarind, kokum.", "price_cents": 1895},
+          {"name": "Dal Makhani", "description": "Black lentils simmered overnight.", "price_cents": 1295}
+        ]
+      },
+      {
+        "name": "Tandoor",
+        "items": [
+          {"name": "Tandoori Chicken", "description": "Half chicken, yogurt marinade.", "price_cents": 1695},
+          {"name": "Paneer Tikka", "description": "Peppers, onion, mint chutney.", "price_cents": 1450},
+          {"name": "Seekh Kebab", "description": "Spiced minced lamb skewers.", "price_cents": 1595}
+        ]
+      },
+      {
+        "name": "Breads & Rice",
+        "items": [
+          {"name": "Garlic Naan", "price_cents": 400},
+          {"name": "Butter Naan", "price_cents": 350},
+          {"name": "Basmati Rice", "price_cents": 350},
+          {"name": "Chicken Biryani", "description": "Saffron rice, raita.", "price_cents": 1795},
+          {"name": "Vegetable Biryani", "description": "Saffron rice, raita.", "price_cents": 1495, "is_available": false}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Lemongrass Lane",
+    "description": "Bright, fragrant Thai cooking with heat levels from mild to fiery.",
+    "cuisine": "thai",
+    "address": "910 Willow Bend Rd, Riverton",
+    "delivery_fee_cents": 299,
+    "categories": [
+      {
+        "name": "Appetizers",
+        "items": [
+          {"name": "Fresh Spring Rolls", "description": "Shrimp, herbs, peanut sauce.", "price_cents": 850},
+          {"name": "Chicken Satay", "description": "Four skewers, peanut sauce, cucumber relish.", "price_cents": 950},
+          {"name": "Tom Yum Soup", "description": "Hot and sour, shrimp, mushrooms.", "price_cents": 900},
+          {"name": "Papaya Salad", "description": "Green papaya, lime, chili, peanuts.", "price_cents": 1050}
+        ]
+      },
+      {
+        "name": "Curries",
+        "items": [
+          {"name": "Green Curry", "description": "Chicken, Thai eggplant, basil.", "price_cents": 1595},
+          {"name": "Red Curry", "description": "Beef, bamboo shoots, kaffir lime.", "price_cents": 1695},
+          {"name": "Massaman Curry", "description": "Chicken, potato, peanuts.", "price_cents": 1695},
+          {"name": "Panang Curry", "description": "Tofu, bell peppers, coconut cream.", "price_cents": 1495}
+        ]
+      },
+      {
+        "name": "Noodles & Rice",
+        "items": [
+          {"name": "Pad Thai", "description": "Rice noodles, shrimp, tamarind, peanuts.", "price_cents": 1595},
+          {"name": "Pad See Ew", "description": "Wide noodles, chicken, Chinese broccoli.", "price_cents": 1495},
+          {"name": "Drunken Noodles", "description": "Beef, chili, holy basil.", "price_cents": 1595},
+          {"name": "Pineapple Fried Rice", "description": "Shrimp, cashews, curry powder.", "price_cents": 1550},
+          {"name": "Khao Soi", "description": "Curry noodle soup, crispy noodles.", "price_cents": 1695}
+        ]
+      },
+      {
+        "name": "Desserts",
+        "items": [
+          {"name": "Mango Sticky Rice", "description": "Coconut cream, sesame.", "price_cents": 850},
+          {"name": "Thai Iced Tea", "price_cents": 450}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Jade Dumpling Hall",
+    "description": "Hand-folded dumplings and wok classics from Sichuan to Canton.",
+    "cuisine": "chinese",
+    "address": "402 Harbor Street, Riverton",
+    "delivery_fee_cents": 249,
+    "categories": [
+      {
+        "name": "Dumplings",
+        "items": [
+          {"name": "Pork Soup Dumplings", "description": "Six xiao long bao.", "price_cents": 1195},
+          {"name": "Shrimp Har Gow", "description": "Four steamed dumplings.", "price_cents": 950},
+          {"name": "Chili Oil Wontons", "description": "Pork wontons, Sichuan chili oil.", "price_cents": 1050},
+          {"name": "Vegetable Potstickers", "description": "Six pan-fried dumplings.", "price_cents": 895}
+        ]
+      },
+      {
+        "name": "Wok",
+        "items": [
+          {"name": "Kung Pao Chicken", "description": "Peanuts, dried chili, Sichuan pepper.", "price_cents": 1595},
+          {"name": "Mapo Tofu", "description": "Silken tofu, minced pork, chili bean sauce.", "price_cents": 1395},
+          {"name": "Beef with Broccoli", "description": "Oyster sauce, garlic.", "price_cents": 1695},
+          {"name": "Salt & Pepper Shrimp", "description": "Crispy shrimp, jalapeno, scallion.", "price_cents": 1895},
+          {"name": "Orange Chicken", "description": "Crispy chicken, sweet orange glaze.", "price_cents": 1550}
+        ]
+      },
+      {
+        "name": "Rice & Noodles",
+        "items": [
+          {"name": "Yangzhou Fried Rice", "description": "Shrimp, char siu, egg.", "price_cents": 1395},
+          {"name": "Dan Dan Noodles", "description": "Spicy pork, sesame, preserved greens.", "price_cents": 1350},
+          {"name": "Beef Chow Fun", "description": "Wide rice noodles, bean sprouts.", "price_cents": 1595}
+        ]
+      },
+      {
+        "name": "Sides",
+        "items": [
+          {"name": "Smashed Cucumber Salad", "price_cents": 695},
+          {"name": "Garlic Bok Choy", "price_cents": 795},
+          {"name": "Steamed Rice", "price_cents": 300}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Riverton Burger Co.",
+    "description": "Smash burgers, hand-cut fries and thick shakes.",
+    "cuisine": "american",
+    "address": "77 Main Street, Riverton",
+    "delivery_fee_cents": 199,
+    "categories": [
+      {
+        "name": "Burgers",
+        "items": [
+          {"name": "Classic Smash", "description": "Two patties, American cheese, pickles, house sauce.", "price_cents": 1195},
+          {"name": "Bacon BBQ Burger", "description": "Cheddar, bacon, onion rings, BBQ sauce.", "price_cents": 1450},
+          {"name": "Mushroom Swiss", "description": "Sauteed mushrooms, Swiss, garlic aioli.", "price_cents": 1350},
+          {"name": "Crispy Chicken Sandwich", "description": "Buttermilk fried chicken, slaw, hot honey.", "price_cents": 1295},
+          {"name": "Black Bean Burger", "description": "Avocado, pepper jack, chipotle mayo.", "price_cents": 1250},
+          {"name": "Double Patty Melt", "description": "Rye, caramelized onions, Swiss.", "price_cents": 1495}
+        ]
+      },
+      {
+        "name": "Sides",
+        "items": [
+          {"name": "Hand-Cut Fries", "price_cents": 450},
+          {"name": "Sweet Potato Fries", "price_cents": 550},
+          {"name": "Onion Rings", "price_cents": 595},
+          {"name": "Mac & Cheese", "description": "Three cheeses, breadcrumb crust.", "price_cents": 695},
+          {"name": "Chili Cheese Fries", "price_cents": 795, "is_available": false}
+        ]
+      },
+      {
+        "name": "Shakes",
+        "items": [
+          {"name": "Vanilla Shake", "price_cents": 650},
+          {"name": "Chocolate Shake", "price_cents": 650},
+          {"name": "Strawberry Shake", "price_cents": 650},
+          {"name": "Salted Caramel Shake", "price_cents": 750}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Olive & Thyme",
+    "description": "Mediterranean mezze, grilled plates and bright salads.",
+    "cuisine": "mediterranean",
+    "address": "15 Seaview Terrace, Riverton",
+    "delivery_fee_cents": 349,
+    "categories": [
+      {
+        "name": "Mezze",
+        "items": [
+          {"name": "Hummus", "description": "Chickpeas, tahini, warm pita.", "price_cents": 750},
+          {"name": "Tzatziki", "description": "Yogurt, cucumber, dill, pita.", "price_cents": 700},
+          {"name": "Spanakopita", "description": "Spinach and feta pie.", "price_cents": 900},
+          {"name": "Grilled Halloumi", "description": "Honey, oregano, lemon.", "price_cents": 1050}
+        ]
+      },
+      {
+        "name": "Plates",
+        "items": [
+          {"name": "Chicken Souvlaki Plate", "description": "Two skewers, rice, salad, pita.", "price_cents": 1795},
+          {"name": "Lamb Kofta Plate", "description": "Herbed lamb, couscous, harissa yogurt.", "price_cents": 1895},
+          {"name": "Grilled Branzino", "description": "Lemon, capers, roasted potatoes.", "price_cents": 2495},
+          {"name": "Falafel Plate", "description": "Hummus, tabbouleh, pickles, pita.", "price_cents": 1495},
+          {"name": "Moussaka", "description": "Eggplant, spiced beef, bechamel.", "price_cents": 1795}
+        ]
+      },
+      {
+        "name": "Salads",
+        "items": [
+          {"name": "Greek Salad", "description": "Tomato, cucumber, olives, feta.", "price_cents": 1150},
+          {"name": "Fattoush", "description": "Crispy pita, sumac, herbs.", "price_cents": 1095},
+          {"name": "Quinoa Tabbouleh", "description": "Parsley, mint, lemon.", "price_cents": 1050}
+        ]
+      },
+      {
+        "name": "Desserts",
+        "items": [
+          {"name": "Baklava", "description": "Walnuts, honey syrup.", "price_cents": 650},
+          {"name": "Greek Yogurt & Honey", "description": "Toasted walnuts.", "price_cents": 700}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Gochu Garden",
+    "description": "Korean comfort food: bibimbap, fried chicken and sizzling BBQ plates.",
+    "cuisine": "korean",
+    "address": "260 Birch Avenue, Riverton",
+    "delivery_fee_cents": 299,
+    "categories": [
+      {
+        "name": "Small Plates",
+        "items": [
+          {"name": "Kimchi Pancake", "description": "Crispy, scallion dipping sauce.", "price_cents": 1050},
+          {"name": "Tteokbokki", "description": "Rice cakes, spicy gochujang sauce, fish cake.", "price_cents": 1150},
+          {"name": "Mandu", "description": "Six fried pork and vegetable dumplings.", "price_cents": 950},
+          {"name": "Korean Fried Chicken", "description": "Half pound, soy garlic or yangnyeom.", "price_cents": 1450}
+        ]
+      },
+      {
+        "name": "Bibimbap & Rice",
+        "items": [
+          {"name": "Beef Bibimbap", "description": "Bulgogi, vegetables, fried egg, gochujang.", "price_cents": 1595},
+          {"name": "Tofu Bibimbap", "description": "Crispy tofu, vegetables, fried egg.", "price_cents": 1395},
+          {"name": "Kimchi Fried Rice", "description": "Pork belly, fried egg.", "price_cents": 1395},
+          {"name": "Japchae", "description": "Glass noodles, vegetables, sesame.", "price_cents": 1350}
+        ]
+      },
+      {
+        "name": "BBQ Plates",
+        "items": [
+          {"name": "Bulgogi Plate", "description": "Marinated ribeye, rice, banchan.", "price_cents": 1995},
+          {"name": "Spicy Pork Plate", "description": "Gochujang pork, rice, banchan.", "price_cents": 1795},
+          {"name": "Galbi Plate", "description": "Marinated short ribs, rice, banchan.", "price_cents": 2695, "is_available": false}
+        ]
+      },
+      {
+        "name": "Drinks",
+        "items": [
+          {"name": "Barley Tea", "price_cents": 300},
+          {"name": "Banana Milk", "price_cents": 400},
+          {"name": "Citron Tea", "description": "Honey yuzu, served iced.", "price_cents": 450}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Mint & Lime Pho",
+    "description": "Vietnamese pho, crusty banh mi and fresh rolls.",
+    "cuisine": "vietnamese",
+    "address": "531 Canal Street, Riverton",
+    "delivery_fee_cents": 249,
+    "categories": [
+      {
+        "name": "Rolls",
+        "items": [
+          {"name": "Summer Rolls", "description": "Shrimp, pork, vermicelli, peanut sauce.", "price_cents": 850},
+          {"name": "Imperial Rolls", "description": "Crispy pork rolls, nuoc cham.", "price_cents": 850},
+          {"name": "Tofu Rolls", "description": "Lettuce, herbs, hoisin peanut sauce.", "price_cents": 795}
+        ]
+      },
+      {
+        "name": "Pho",
+        "items": [
+          {"name": "Pho Tai", "description": "Rare beef, beef broth, rice noodles.", "price_cents": 1495},
+          {"name": "Pho Dac Biet", "description": "Rare beef, brisket, tendon, meatballs.", "price_cents": 1695},
+          {"name": "Pho Ga", "description": "Chicken broth, poached chicken.", "price_cents": 1450},
+          {"name": "Vegetable Pho", "description": "Vegetable broth, tofu, mushrooms.", "price_cents": 1350}
+        ]
+      },
+      {
+        "name": "Banh Mi",
+        "items": [
+          {"name": "Grilled Pork Banh Mi", "description": "Pickled carrot, daikon, cilantro, chili.", "price_cents": 1095},
+          {"name": "Lemongrass Chicken Banh Mi", "description": "Pickles, cucumber, sriracha mayo.", "price_cents": 1095},
+          {"name": "Pate & Ham Banh Mi", "description": "Classic dac biet.", "price_cents": 1050},
+          {"name": "Tofu Banh Mi", "description": "Five-spice tofu, pickles.", "price_cents": 995}
+        ]
+      },
+      {
+        "name": "Drinks",
+        "items": [
+          {"name": "Vietnamese Iced Coffee", "description": "Condensed milk.", "price_cents": 550},
+          {"name": "Fresh Lime Soda", "price_cents": 450},
+          {"name": "Avocado Smoothie", "price_cents": 650}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Cedar Hearth",
+    "description": "Lebanese grill: charcoal skewers, shawarma wraps and warm bread.",
+    "cuisine": "lebanese",
+    "address": "68 Granite Way, Riverton",
+    "delivery_fee_cents": 349,
+    "categories": [
+      {
+        "name": "Mezze",
+        "items": [
+          {"name": "Baba Ghanoush", "description": "Smoked eggplant, tahini, pomegranate.", "price_cents": 800},
+          {"name": "Muhammara", "description": "Roasted pepper, walnut, pomegranate molasses.", "price_cents": 850},
+          {"name": "Kibbeh", "description": "Four bulgur and beef croquettes.", "price_cents": 1050},
+          {"name": "Labneh", "description": "Strained yogurt, za'atar, olive oil.", "price_cents": 750}
+        ]
+      },
+      {
+        "name": "Grill",
+        "items": [
+          {"name": "Shish Taouk", "description": "Garlic chicken skewers, rice, toum.", "price_cents": 1795},
+          {"name": "Kafta Skewers", "description": "Spiced beef and lamb, grilled tomato.", "price_cents": 1850},
+          {"name": "Mixed Grill", "description": "Taouk, kafta, lamb, rice, salad.", "price_cents": 2595},
+          {"name": "Grilled Vegetable Platter", "description": "Halloumi, peppers, zucchini.", "price_cents": 1595}
+        ]
+      },
+      {
+        "name": "Wraps",
+        "items": [
+          {"name": "Chicken Shawarma Wrap", "description": "Toum, pickles, fries inside.", "price_cents": 1195},
+          {"name": "Beef Shawarma Wrap", "description": "Tahini, onion, parsley.", "price_cents": 1250},
+          {"name": "Falafel Wrap", "description": "Tahini, tomato, turnip pickles.", "price_cents": 1050}
+        ]
+      },
+      {
+        "name": "Sweets",
+        "items": [
+          {"name": "Knafeh", "description": "Warm cheese pastry, orange blossom syrup.", "price_cents": 950},
+          {"name": "Maamoul", "description": "Three date-filled cookies.", "price_cents": 600}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Sprout & Barrel",
+    "description": "Fully plant-based bowls, burgers and bakes.",
+    "cuisine": "vegan",
+    "address": "305 Meadow Court, Riverton",
+    "delivery_fee_cents": 299,
+    "categories": [
+      {
+        "name": "Bowls",
+        "items": [
+          {"name": "Green Goddess Bowl", "description": "Quinoa, kale, avocado, herb dressing.", "price_cents": 1450},
+          {"name": "Teriyaki Tofu Bowl", "description": "Brown rice, edamame, pickled ginger.", "price_cents": 1395},
+          {"name": "Harissa Chickpea Bowl", "description": "Couscous, roasted vegetables, tahini.", "price_cents": 1350},
+          {"name": "Burrito Bowl", "description": "Black beans, corn salsa, cashew crema.", "price_cents": 1395}
+        ]
+      },
+      {
+        "name": "Burgers & Wraps",
+        "items": [
+          {"name": "Smoky Mushroom Burger", "description": "Portobello, vegan cheddar, chipotle mayo.", "price_cents": 1450},
+          {"name": "Buffalo Cauliflower Wrap", "description": "Ranch, celery, lettuce.", "price_cents": 1250},
+          {"name": "BBQ Jackfruit Sandwich", "description": "Slaw, pickles, brioche-style bun.", "price_cents": 1295}
+        ]
+      },
+      {
+        "name": "Sides",
+        "items": [
+          {"name": "Rosemary Potato Wedges", "price_cents": 550},
+          {"name": "Miso Glazed Carrots", "price_cents": 650},
+          {"name": "Kale Caesar", "description": "Cashew dressing, coconut bacon.", "price_cents": 950}
+        ]
+      },
+      {
+        "name": "Sweets",
+        "items": [
+          {"name": "Chocolate Avocado Mousse", "price_cents": 750},
+          {"name": "Oat Cookie", "description": "Dark chocolate, sea salt.", "price_cents": 400},
+          {"name": "Banana Bread", "description": "Walnuts, maple glaze.", "price_cents": 500, "is_available": false}
+        ]
+      }
+    ]
+  }
+]

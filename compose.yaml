@@ -1,0 +1,68 @@
+# Every value has a development default, so `docker compose up` needs no .env.
+x-app-env: &app-env
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_NAME: ${DB_NAME:-takeaway}
+  DB_USER: ${DB_USER:-takeaway}
+  DB_PASSWORD: ${DB_PASSWORD:-takeaway-dev-password}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-jwt-secret-change-me}
+  CORS_ORIGINS: ${CORS_ORIGINS:-[]}
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${DB_NAME:-takeaway}
+      POSTGRES_USER: ${DB_USER:-takeaway}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-takeaway-dev-password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: .
+    command: ["sh", "-c", "alembic upgrade head && python -m app.cli seed"]
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    environment: *app-env
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.30-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
