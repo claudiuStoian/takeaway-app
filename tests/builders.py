@@ -1,8 +1,8 @@
 """Test data builders.
 
-Users are created over HTTP; admins are signed up, then promoted through the ORM. Catalogue rows
-have no API yet, so they are built through the ORM here; this is the only test module that knows
-the table layout.
+Users are created over HTTP; admins are signed up, then promoted through the ORM. Restaurants
+have no API, so catalogue rows are built through the ORM here; this is the only test module that
+knows the table layout. Admin menu changes under test go through the HTTP helpers.
 """
 
 import json
@@ -110,6 +110,40 @@ async def move_order_to(
     for step in ADMIN_PATHS_FROM_PENDING[status]:
         response = await change_order_status(client, admin, public_id, step)
         assert response.status_code == 200, response.text
+
+
+def admin_menu_url(restaurant_id: int, path: str = '') -> str:
+    return f'/api/v1/admin/restaurants/{restaurant_id}{path}'
+
+
+async def create_category(
+    client: AsyncClient, admin: dict[str, str], restaurant_id: int, name: str
+) -> Response:
+    return await client.post(
+        admin_menu_url(restaurant_id, '/categories'), json={'name': name}, headers=admin
+    )
+
+
+async def update_category(
+    client: AsyncClient, admin: dict[str, str], restaurant_id: int, category_id: int, body: dict
+) -> Response:
+    return await client.patch(
+        admin_menu_url(restaurant_id, f'/categories/{category_id}'), json=body, headers=admin
+    )
+
+
+async def create_item(
+    client: AsyncClient, admin: dict[str, str], restaurant_id: int, body: dict
+) -> Response:
+    return await client.post(admin_menu_url(restaurant_id, '/items'), json=body, headers=admin)
+
+
+async def update_item(
+    client: AsyncClient, admin: dict[str, str], restaurant_id: int, item_id: int, body: dict
+) -> Response:
+    return await client.patch(
+        admin_menu_url(restaurant_id, f'/items/{item_id}'), json=body, headers=admin
+    )
 
 
 def raw_cursor(values: list) -> str:

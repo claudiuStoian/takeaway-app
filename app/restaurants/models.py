@@ -43,6 +43,7 @@ class MenuCategory(Base):
     __tablename__ = 'menu_categories'
     # Target of menu_items' composite FK, which keeps an item's category in its restaurant.
     __table_args__ = (UniqueConstraint('restaurant_id', 'id'),)
+    __mapper_args__ = {'eager_defaults': True}
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     restaurant_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('restaurants.id'))
@@ -62,6 +63,7 @@ class MenuItem(Base):
         ),
         CheckConstraint('price_cents > 0', name='price_cents_positive'),
     )
+    __mapper_args__ = {'eager_defaults': True}
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     restaurant_id: Mapped[int] = mapped_column(BigInteger)
