@@ -3,6 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app.auth import models as auth_models  # noqa: F401  (registers tables)
 from app.core.config import settings
 from app.core.db import Base
 from app.restaurants import models as restaurant_models  # noqa: F401  (registers tables)

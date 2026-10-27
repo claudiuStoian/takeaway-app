@@ -40,6 +40,8 @@ Backend for a small takeaway platform. Customers browse restaurants and menus, p
 
 Field names are identical across SQLAlchemy models, Pydantic schemas, and API query/path params. The model column/table name is the authority. When adding a field or entity, check the model first and carry that name through.
 
+Model classes are singular (`User`, `MenuItem`); tables are plural snake_case (`users`, `menu_items`), and constraint/index names follow the table. This also keeps Postgres reserved words (`user`, `order`) out of table names — check new names against `pg_get_keywords()`.
+
 ## Style guide
 
 Code should read like a person wrote it: descriptive names, short functions that read top-down as a sequence of named steps, few comments.

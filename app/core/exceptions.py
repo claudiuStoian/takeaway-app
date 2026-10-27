@@ -9,11 +9,23 @@ class DomainError(Exception):
 
     status_code: HTTPStatus = HTTPStatus.BAD_REQUEST
     detail: str = 'The request could not be processed.'
+    headers: dict[str, str] | None = None
 
     def __init__(self, detail: str | None = None) -> None:
         if detail is not None:
             self.detail = detail
         super().__init__(self.detail)
+
+
+class NotAuthenticatedError(DomainError):
+    status_code = HTTPStatus.UNAUTHORIZED
+    detail = 'Not authenticated.'
+    headers = {'WWW-Authenticate': 'Bearer'}
+
+
+class ForbiddenError(DomainError):
+    status_code = HTTPStatus.FORBIDDEN
+    detail = 'Not allowed.'
 
 
 class NotFoundError(DomainError):
@@ -32,4 +44,6 @@ class InvalidInputError(DomainError):
 
 
 async def handle_domain_error(_: Request, exc: DomainError) -> JSONResponse:
-    return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
+    return JSONResponse(
+        status_code=exc.status_code, content={'detail': exc.detail}, headers=exc.headers
+    )

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import router as auth
 from app.core import health
 from app.core.config import settings
 from app.core.db import engine
@@ -22,6 +23,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title='Takeaway API', lifespan=lifespan)
 app.add_exception_handler(DomainError, handle_domain_error)
 app.include_router(health.router)
+app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(restaurants.router, prefix=API_PREFIX)
 
 if settings.cors_origins:

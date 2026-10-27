@@ -6,7 +6,7 @@ x-app-env: &app-env
   DB_NAME: ${DB_NAME:-takeaway}
   DB_USER: ${DB_USER:-takeaway}
   DB_PASSWORD: ${DB_PASSWORD:-takeaway-dev-password}
-  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-jwt-secret-change-me}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-jwt-secret-change-me-before-production}
   CORS_ORIGINS: ${CORS_ORIGINS:-[]}
 
 services:

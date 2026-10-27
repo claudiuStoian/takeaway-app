@@ -5,7 +5,9 @@ from pydantic import computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEV_DB_PASSWORD = 'takeaway-dev-password'
-DEV_JWT_SECRET_KEY = 'dev-only-jwt-secret-change-me'
+DEV_JWT_SECRET_KEY = 'dev-only-jwt-secret-change-me-before-production'
+# RFC 7518 §3.2: an HS256 key must be at least 256 bits.
+JWT_SECRET_MIN_LENGTH = 32
 
 
 class Environment(StrEnum):
@@ -44,6 +46,11 @@ class AppSettings(BaseSettings):
             return self
         if self.jwt_secret_key == DEV_JWT_SECRET_KEY or self.db_password == DEV_DB_PASSWORD:
             raise ValueError('Development secrets must be replaced when ENVIRONMENT=production.')
+        if len(self.jwt_secret_key.encode()) < JWT_SECRET_MIN_LENGTH:
+            raise ValueError(
+                f'JWT_SECRET_KEY must be at least {JWT_SECRET_MIN_LENGTH} bytes '
+                'when ENVIRONMENT=production.'
+            )
         return self
 
 

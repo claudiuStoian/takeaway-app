@@ -18,11 +18,11 @@ from app.core.db import Base
 
 
 class Restaurant(Base):
-    __tablename__ = 'restaurant'
+    __tablename__ = 'restaurants'
     __table_args__ = (
         CheckConstraint('delivery_fee_cents >= 0', name='delivery_fee_cents_non_negative'),
-        Index('ix_restaurant_name_id', 'name', 'id'),
-        Index('ix_restaurant_cuisine_name_id', 'cuisine', 'name', 'id'),
+        Index('ix_restaurants_name_id', 'name', 'id'),
+        Index('ix_restaurants_cuisine_name_id', 'cuisine', 'name', 'id'),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -40,12 +40,12 @@ class Restaurant(Base):
 
 
 class MenuCategory(Base):
-    __tablename__ = 'menu_category'
-    # Target of menu_item's composite FK, which keeps an item's category in its restaurant.
+    __tablename__ = 'menu_categories'
+    # Target of menu_items' composite FK, which keeps an item's category in its restaurant.
     __table_args__ = (UniqueConstraint('restaurant_id', 'id'),)
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    restaurant_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('restaurant.id'))
+    restaurant_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('restaurants.id'))
     name: Mapped[str]
     position: Mapped[int]
     is_archived: Mapped[bool] = mapped_column(server_default=false())
@@ -54,11 +54,11 @@ class MenuCategory(Base):
 
 
 class MenuItem(Base):
-    __tablename__ = 'menu_item'
+    __tablename__ = 'menu_items'
     __table_args__ = (
         ForeignKeyConstraint(
             ['restaurant_id', 'category_id'],
-            ['menu_category.restaurant_id', 'menu_category.id'],
+            ['menu_categories.restaurant_id', 'menu_categories.id'],
         ),
         CheckConstraint('price_cents > 0', name='price_cents_positive'),
     )
@@ -77,13 +77,13 @@ class MenuItem(Base):
 
 # Case-insensitive unique names, archived rows included: re-adding a name means un-archiving.
 Index(
-    'uq_menu_category_restaurant_id_lower_name',
+    'uq_menu_categories_restaurant_id_lower_name',
     MenuCategory.restaurant_id,
     func.lower(MenuCategory.name),
     unique=True,
 )
 Index(
-    'uq_menu_item_category_id_lower_name',
+    'uq_menu_items_category_id_lower_name',
     MenuItem.category_id,
     func.lower(MenuItem.name),
     unique=True,
