@@ -7,13 +7,13 @@ from app.core.db import SessionDep
 from app.core.limits import MAX_DB_ID
 from app.restaurants.admin_service import AdminMenuService
 from app.restaurants.schemas import (
-    AdminCategoryRead,
-    AdminMenuItemRead,
-    AdminMenuRead,
-    MenuCategoryCreate,
-    MenuCategoryUpdate,
-    MenuItemCreate,
-    MenuItemUpdate,
+    AdminMenuCategoryResponse,
+    AdminMenuItemResponse,
+    AdminMenuResponse,
+    MenuCategoryCreateRequest,
+    MenuCategoryUpdateRequest,
+    MenuItemCreateRequest,
+    MenuItemUpdateRequest,
 )
 
 router = APIRouter(prefix='/admin/restaurants/{restaurant_id}', tags=['admin menus'])
@@ -21,38 +21,46 @@ router = APIRouter(prefix='/admin/restaurants/{restaurant_id}', tags=['admin men
 DbId = Annotated[int, Path(ge=1, le=MAX_DB_ID)]
 
 
-@router.get('/menu', response_model=AdminMenuRead)
-async def get_admin_menu(session: SessionDep, _: AdminDep, restaurant_id: DbId) -> AdminMenuRead:
+@router.get('/menu', response_model=AdminMenuResponse)
+async def get_admin_menu(
+    session: SessionDep, _: AdminDep, restaurant_id: DbId
+) -> AdminMenuResponse:
     return await AdminMenuService.get_menu(session, restaurant_id)
 
 
-@router.post('/categories', response_model=AdminCategoryRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    '/categories', response_model=AdminMenuCategoryResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_category(
-    session: SessionDep, _: AdminDep, restaurant_id: DbId, request: MenuCategoryCreate
-) -> AdminCategoryRead:
+    session: SessionDep, _: AdminDep, restaurant_id: DbId, request: MenuCategoryCreateRequest
+) -> AdminMenuCategoryResponse:
     return await AdminMenuService.create_category(session, restaurant_id, request)
 
 
-@router.patch('/categories/{category_id}', response_model=AdminCategoryRead)
+@router.patch('/categories/{category_id}', response_model=AdminMenuCategoryResponse)
 async def update_category(
     session: SessionDep,
     _: AdminDep,
     restaurant_id: DbId,
     category_id: DbId,
-    request: MenuCategoryUpdate,
-) -> AdminCategoryRead:
+    request: MenuCategoryUpdateRequest,
+) -> AdminMenuCategoryResponse:
     return await AdminMenuService.update_category(session, restaurant_id, category_id, request)
 
 
-@router.post('/items', response_model=AdminMenuItemRead, status_code=status.HTTP_201_CREATED)
+@router.post('/items', response_model=AdminMenuItemResponse, status_code=status.HTTP_201_CREATED)
 async def create_item(
-    session: SessionDep, _: AdminDep, restaurant_id: DbId, request: MenuItemCreate
-) -> AdminMenuItemRead:
+    session: SessionDep, _: AdminDep, restaurant_id: DbId, request: MenuItemCreateRequest
+) -> AdminMenuItemResponse:
     return await AdminMenuService.create_item(session, restaurant_id, request)
 
 
-@router.patch('/items/{item_id}', response_model=AdminMenuItemRead)
+@router.patch('/items/{item_id}', response_model=AdminMenuItemResponse)
 async def update_item(
-    session: SessionDep, _: AdminDep, restaurant_id: DbId, item_id: DbId, request: MenuItemUpdate
-) -> AdminMenuItemRead:
+    session: SessionDep,
+    _: AdminDep,
+    restaurant_id: DbId,
+    item_id: DbId,
+    request: MenuItemUpdateRequest,
+) -> AdminMenuItemResponse:
     return await AdminMenuService.update_item(session, restaurant_id, item_id, request)

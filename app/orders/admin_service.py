@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.auth.models import User
 from app.orders.models import Order, OrderStatus, OrderStatusEvent
-from app.orders.schemas import AdminOrderPage, AdminOrderRead, OrderStatusEventRead
+from app.orders.schemas import AdminOrderPageResponse, AdminOrderResponse, OrderStatusEventResponse
 from app.orders.service import (
     ADMIN_TRANSITIONS,
     OrderNotFound,
@@ -29,21 +29,21 @@ class AdminOrderService:
         cursor: str | None,
         status: OrderStatus | None,
         restaurant_id: int | None,
-    ) -> AdminOrderPage:
+    ) -> AdminOrderPageResponse:
         query = build_order_list_query(
             cls._build_filters(status, restaurant_id), limit, cursor
         ).options(selectinload(Order.customer))
         rows = list(await session.scalars(query))
 
-        return AdminOrderPage(
-            items=[AdminOrderRead.model_validate(order) for order in rows[:limit]],
+        return AdminOrderPageResponse(
+            items=[AdminOrderResponse.model_validate(order) for order in rows[:limit]],
             next_cursor=next_order_cursor(rows, limit),
         )
 
     @classmethod
     async def change_status(
         cls, session: AsyncSession, admin: User, public_id: UUID, to_status: OrderStatus
-    ) -> AdminOrderRead:
+    ) -> AdminOrderResponse:
         query = (
             build_order_query(Order.public_id == public_id)
             .options(selectinload(Order.customer))
@@ -54,12 +54,12 @@ class AdminOrderService:
 
         session.add(transition_order(order, to_status, admin, ADMIN_TRANSITIONS))
         await session.commit()
-        return AdminOrderRead.model_validate(order)
+        return AdminOrderResponse.model_validate(order)
 
     @classmethod
     async def list_history(
         cls, session: AsyncSession, public_id: UUID
-    ) -> list[OrderStatusEventRead]:
+    ) -> list[OrderStatusEventResponse]:
         order_id = await session.scalar(select(Order.id).where(Order.public_id == public_id))
         if order_id is None:
             raise OrderNotFound
@@ -70,7 +70,7 @@ class AdminOrderService:
             .options(selectinload(OrderStatusEvent.actor))
             .order_by(OrderStatusEvent.id)
         )
-        return [OrderStatusEventRead.model_validate(event) for event in events]
+        return [OrderStatusEventResponse.model_validate(event) for event in events]
 
     @staticmethod
     def _build_filters(

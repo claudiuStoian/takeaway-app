@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-from app.auth.models import UserRole
+from app.auth.schemas import UserSummaryResponse
 from app.core.limits import (
     MAX_DB_ID,
     MAX_DELIVERY_ADDRESS_LENGTH,
@@ -36,27 +36,27 @@ OrderNotes = Annotated[
 ]
 
 
-class OrderItemCreate(BaseModel):
+class OrderItemRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     menu_item_id: int = Field(ge=1, le=MAX_DB_ID)
     quantity: int = Field(ge=1, le=MAX_QUANTITY_PER_ITEM)
 
 
-class OrderCreate(BaseModel):
+class OrderPlaceRequest(BaseModel):
     """Has no price or total fields: the server computes them from the current menu."""
 
     model_config = ConfigDict(extra='forbid')
 
     restaurant_id: int = Field(ge=1, le=MAX_DB_ID)
-    items: list[OrderItemCreate] = Field(min_length=1, max_length=MAX_LINES_PER_ORDER)
+    items: list[OrderItemRequest] = Field(min_length=1, max_length=MAX_LINES_PER_ORDER)
     delivery_address: DeliveryAddress
     phone: Phone
     notes: OrderNotes | None = None
 
     @field_validator('items')
     @classmethod
-    def reject_repeated_items(cls, items: list[OrderItemCreate]) -> list[OrderItemCreate]:
+    def reject_repeated_items(cls, items: list[OrderItemRequest]) -> list[OrderItemRequest]:
         menu_item_ids = [item.menu_item_id for item in items]
         if len(set(menu_item_ids)) != len(menu_item_ids):
             raise ValueError("Each menu item may appear only once; use quantity instead.")
@@ -69,7 +69,7 @@ class OrderCreate(BaseModel):
         return notes or None
 
 
-class OrderItemRead(BaseModel):
+class OrderItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     menu_item_id: int
@@ -78,7 +78,7 @@ class OrderItemRead(BaseModel):
     quantity: int
 
 
-class OrderRead(BaseModel):
+class OrderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     public_id: UUID
@@ -90,44 +90,35 @@ class OrderRead(BaseModel):
     subtotal_cents: int
     delivery_fee_cents: int
     total_cents: int
-    items: list[OrderItemRead]
+    items: list[OrderItemResponse]
     created_at: datetime
     updated_at: datetime
 
 
-class OrderPage(BaseModel):
-    items: list[OrderRead]
+class OrderPageResponse(BaseModel):
+    items: list[OrderResponse]
     next_cursor: str | None
 
 
-class OrderStatusChange(BaseModel):
+class OrderStatusUpdateRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     to: OrderStatus
 
 
-class UserSummaryRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    public_id: UUID
-    full_name: str
-    email: str
-    role: UserRole
+class AdminOrderResponse(OrderResponse):
+    customer: UserSummaryResponse
 
 
-class AdminOrderRead(OrderRead):
-    customer: UserSummaryRead
-
-
-class AdminOrderPage(BaseModel):
-    items: list[AdminOrderRead]
+class AdminOrderPageResponse(BaseModel):
+    items: list[AdminOrderResponse]
     next_cursor: str | None
 
 
-class OrderStatusEventRead(BaseModel):
+class OrderStatusEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     from_status: OrderStatus | None
     to_status: OrderStatus
-    actor: UserSummaryRead
+    actor: UserSummaryResponse
     created_at: datetime

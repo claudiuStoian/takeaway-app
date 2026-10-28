@@ -5,13 +5,13 @@ from sqlalchemy.orm import selectinload
 from app.core.exceptions import ConflictError, InvalidInputError, NotFoundError
 from app.restaurants.models import MenuCategory, MenuItem, Restaurant
 from app.restaurants.schemas import (
-    AdminCategoryRead,
-    AdminMenuItemRead,
-    AdminMenuRead,
-    MenuCategoryCreate,
-    MenuCategoryUpdate,
-    MenuItemCreate,
-    MenuItemUpdate,
+    AdminMenuCategoryResponse,
+    AdminMenuItemResponse,
+    AdminMenuResponse,
+    MenuCategoryCreateRequest,
+    MenuCategoryUpdateRequest,
+    MenuItemCreateRequest,
+    MenuItemUpdateRequest,
 )
 from app.restaurants.service import RestaurantNotFound
 
@@ -44,7 +44,7 @@ class AdminMenuService:
     """
 
     @classmethod
-    async def get_menu(cls, session: AsyncSession, restaurant_id: int) -> AdminMenuRead:
+    async def get_menu(cls, session: AsyncSession, restaurant_id: int) -> AdminMenuResponse:
         query = (
             select(Restaurant)
             .where(Restaurant.id == restaurant_id)
@@ -54,12 +54,12 @@ class AdminMenuService:
         )
         if (restaurant := await session.scalar(query)) is None:
             raise RestaurantNotFound
-        return AdminMenuRead.model_validate(restaurant)
+        return AdminMenuResponse.model_validate(restaurant)
 
     @classmethod
     async def create_category(
-        cls, session: AsyncSession, restaurant_id: int, request: MenuCategoryCreate
-    ) -> AdminCategoryRead:
+        cls, session: AsyncSession, restaurant_id: int, request: MenuCategoryCreateRequest
+    ) -> AdminMenuCategoryResponse:
         await cls._lock_restaurant(session, restaurant_id)
         await cls._ensure_category_name_is_free(session, restaurant_id, request.name)
 
@@ -75,7 +75,7 @@ class AdminMenuService:
         )
         session.add(category)
         await session.commit()
-        return AdminCategoryRead.model_validate(category)
+        return AdminMenuCategoryResponse.model_validate(category)
 
     @classmethod
     async def update_category(
@@ -83,8 +83,8 @@ class AdminMenuService:
         session: AsyncSession,
         restaurant_id: int,
         category_id: int,
-        request: MenuCategoryUpdate,
-    ) -> AdminCategoryRead:
+        request: MenuCategoryUpdateRequest,
+    ) -> AdminMenuCategoryResponse:
         await cls._lock_restaurant(session, restaurant_id)
         category = await session.scalar(
             select(MenuCategory).where(
@@ -102,12 +102,12 @@ class AdminMenuService:
         for field, value in changes.items():
             setattr(category, field, value)
         await session.commit()
-        return AdminCategoryRead.model_validate(category)
+        return AdminMenuCategoryResponse.model_validate(category)
 
     @classmethod
     async def create_item(
-        cls, session: AsyncSession, restaurant_id: int, request: MenuItemCreate
-    ) -> AdminMenuItemRead:
+        cls, session: AsyncSession, restaurant_id: int, request: MenuItemCreateRequest
+    ) -> AdminMenuItemResponse:
         await cls._lock_restaurant(session, restaurant_id)
         await cls._ensure_category_is_in_restaurant(session, restaurant_id, request.category_id)
         await cls._ensure_item_name_is_free(session, request.category_id, request.name)
@@ -115,12 +115,16 @@ class AdminMenuService:
         item = MenuItem(restaurant_id=restaurant_id, **request.model_dump())
         session.add(item)
         await session.commit()
-        return AdminMenuItemRead.model_validate(item)
+        return AdminMenuItemResponse.model_validate(item)
 
     @classmethod
     async def update_item(
-        cls, session: AsyncSession, restaurant_id: int, item_id: int, request: MenuItemUpdate
-    ) -> AdminMenuItemRead:
+        cls,
+        session: AsyncSession,
+        restaurant_id: int,
+        item_id: int,
+        request: MenuItemUpdateRequest,
+    ) -> AdminMenuItemResponse:
         await cls._lock_restaurant(session, restaurant_id)
         item = await session.scalar(
             select(MenuItem).where(MenuItem.id == item_id, MenuItem.restaurant_id == restaurant_id)
@@ -143,7 +147,7 @@ class AdminMenuService:
         for field, value in changes.items():
             setattr(item, field, value)
         await session.commit()
-        return AdminMenuItemRead.model_validate(item)
+        return AdminMenuItemResponse.model_validate(item)
 
     @staticmethod
     async def _lock_restaurant(session: AsyncSession, restaurant_id: int) -> None:

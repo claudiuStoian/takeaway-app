@@ -32,19 +32,22 @@ class LoginRequest(BaseModel):
     password: str = Field(max_length=PASSWORD_MAX_LENGTH)
 
 
-class TokenRead(BaseModel):
+class TokenResponse(BaseModel):
     access_token: str
     token_type: Literal['bearer'] = 'bearer'
     expires_in: int = ACCESS_TOKEN_TTL_MINUTES * 60
 
 
-class UserRead(BaseModel):
+class UserSummaryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     public_id: UUID
-    email: str
     full_name: str
+    email: str
     role: UserRole
+
+
+class UserResponse(UserSummaryResponse):
     created_at: datetime
 
 

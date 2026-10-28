@@ -10,16 +10,16 @@ from app.core.pagination import DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT
 from app.orders.admin_service import AdminOrderService
 from app.orders.models import OrderStatus
 from app.orders.schemas import (
-    AdminOrderPage,
-    AdminOrderRead,
-    OrderStatusChange,
-    OrderStatusEventRead,
+    AdminOrderPageResponse,
+    AdminOrderResponse,
+    OrderStatusEventResponse,
+    OrderStatusUpdateRequest,
 )
 
 router = APIRouter(prefix='/admin/orders', tags=['admin orders'])
 
 
-@router.get('', response_model=AdminOrderPage)
+@router.get('', response_model=AdminOrderPageResponse)
 async def list_orders(
     session: SessionDep,
     _: AdminDep,
@@ -27,21 +27,21 @@ async def list_orders(
     cursor: str | None = None,
     status: OrderStatus | None = None,
     restaurant_id: Annotated[int | None, Query(ge=1, le=MAX_DB_ID)] = None,
-) -> AdminOrderPage:
+) -> AdminOrderPageResponse:
     return await AdminOrderService.list_page(
         session, limit=limit, cursor=cursor, status=status, restaurant_id=restaurant_id
     )
 
 
-@router.post('/{public_id}/status', response_model=AdminOrderRead)
+@router.post('/{public_id}/status', response_model=AdminOrderResponse)
 async def change_order_status(
-    session: SessionDep, admin: AdminDep, public_id: UUID, request: OrderStatusChange
-) -> AdminOrderRead:
+    session: SessionDep, admin: AdminDep, public_id: UUID, request: OrderStatusUpdateRequest
+) -> AdminOrderResponse:
     return await AdminOrderService.change_status(session, admin, public_id, request.to)
 
 
-@router.get('/{public_id}/history', response_model=list[OrderStatusEventRead])
+@router.get('/{public_id}/history', response_model=list[OrderStatusEventResponse])
 async def list_order_history(
     session: SessionDep, _: AdminDep, public_id: UUID
-) -> list[OrderStatusEventRead]:
+) -> list[OrderStatusEventResponse]:
     return await AdminOrderService.list_history(session, public_id)

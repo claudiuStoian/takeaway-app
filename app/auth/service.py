@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User, UserRole
-from app.auth.schemas import LoginRequest, SignupRequest, TokenRead, UserRead
+from app.auth.schemas import LoginRequest, SignupRequest, TokenResponse, UserResponse
 from app.core.exceptions import ConflictError, NotAuthenticatedError
 from app.core.security import (
     create_access_token,
@@ -34,7 +34,7 @@ class InvalidCredentials(NotAuthenticatedError):
 
 class AuthService:
     @classmethod
-    async def signup(cls, session: AsyncSession, request: SignupRequest) -> UserRead:
+    async def signup(cls, session: AsyncSession, request: SignupRequest) -> UserResponse:
         user = User(
             email=request.email,
             hashed_password=await hash_password(request.password),
@@ -43,15 +43,15 @@ class AuthService:
         )
         session.add(user)
         await cls._commit_new_user(session)
-        return UserRead.model_validate(user)
+        return UserResponse.model_validate(user)
 
     @classmethod
-    async def login(cls, session: AsyncSession, request: LoginRequest) -> TokenRead:
+    async def login(cls, session: AsyncSession, request: LoginRequest) -> TokenResponse:
         user = await session.scalar(select(User).where(User.email == request.email))
         if not await cls._is_valid_login(user, request.password):
             logger.warning('Login failed')
             raise InvalidCredentials
-        return TokenRead(access_token=create_access_token(user.public_id))
+        return TokenResponse(access_token=create_access_token(user.public_id))
 
     @classmethod
     async def authenticate(cls, session: AsyncSession, token: str) -> User:

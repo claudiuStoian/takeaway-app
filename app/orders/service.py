@@ -13,7 +13,7 @@ from app.core.exceptions import ConflictError, InvalidInputError, NotFoundError
 from app.core.limits import MAX_ORDER_TOTAL_CENTS
 from app.core.pagination import InvalidCursor, decode_cursor, encode_cursor
 from app.orders.models import Order, OrderItem, OrderStatus, OrderStatusEvent
-from app.orders.schemas import OrderCreate, OrderPage, OrderRead
+from app.orders.schemas import OrderPageResponse, OrderPlaceRequest, OrderResponse
 from app.restaurants.models import MenuCategory, MenuItem, Restaurant
 
 # The single source of allowed status moves, per actor. Anything not listed is a 409.
@@ -52,8 +52,12 @@ class InvalidStatusTransition(ConflictError):
 class OrderService:
     @classmethod
     async def place(
-        cls, session: AsyncSession, customer: User, idempotency_key: UUID, request: OrderCreate
-    ) -> tuple[OrderRead, bool]:
+        cls,
+        session: AsyncSession,
+        customer: User,
+        idempotency_key: UUID,
+        request: OrderPlaceRequest,
+    ) -> tuple[OrderResponse, bool]:
         """Places an order once per idempotency key; returns the order and whether it is new.
 
         A repeat with the same body returns the original order without re-checking the menu,
@@ -67,7 +71,7 @@ class OrderService:
         if existing := await cls._find_by_idempotency_key(session, customer.id, idempotency_key):
             if existing.idempotency_fingerprint != fingerprint:
                 raise IdempotencyKeyReused
-            return OrderRead.model_validate(existing), False
+            return OrderResponse.model_validate(existing), False
 
         restaurant = await cls._load_active_restaurant(session, request.restaurant_id)
         menu_items = await cls._load_orderable_items(session, request)
@@ -106,39 +110,39 @@ class OrderService:
         )
         session.add(order)
         await session.commit()
-        return OrderRead.model_validate(order), True
+        return OrderResponse.model_validate(order), True
 
     @classmethod
     async def list_page(
         cls, session: AsyncSession, customer: User, *, limit: int, cursor: str | None
-    ) -> OrderPage:
+    ) -> OrderPageResponse:
         query = build_order_list_query([Order.customer_id == customer.id], limit, cursor)
         rows = list(await session.scalars(query))
 
-        return OrderPage(
-            items=[OrderRead.model_validate(order) for order in rows[:limit]],
+        return OrderPageResponse(
+            items=[OrderResponse.model_validate(order) for order in rows[:limit]],
             next_cursor=next_order_cursor(rows, limit),
         )
 
     @classmethod
-    async def get(cls, session: AsyncSession, customer: User, public_id: UUID) -> OrderRead:
+    async def get(cls, session: AsyncSession, customer: User, public_id: UUID) -> OrderResponse:
         order = await session.scalar(cls._build_own_order_query(customer.id, public_id))
         if order is None:
             raise OrderNotFound
-        return OrderRead.model_validate(order)
+        return OrderResponse.model_validate(order)
 
     @classmethod
-    async def cancel(cls, session: AsyncSession, customer: User, public_id: UUID) -> OrderRead:
+    async def cancel(cls, session: AsyncSession, customer: User, public_id: UUID) -> OrderResponse:
         query = cls._build_own_order_query(customer.id, public_id).with_for_update(of=Order)
         if (order := await session.scalar(query)) is None:
             raise OrderNotFound
 
         session.add(transition_order(order, OrderStatus.CANCELLED, customer, CUSTOMER_TRANSITIONS))
         await session.commit()
-        return OrderRead.model_validate(order)
+        return OrderResponse.model_validate(order)
 
     @staticmethod
-    def _fingerprint(request: OrderCreate) -> str:
+    def _fingerprint(request: OrderPlaceRequest) -> str:
         body = request.model_dump(mode='json')
         # Line order alone doesn't make a different order.
         body['items'] = sorted(body['items'], key=itemgetter('menu_item_id'))
@@ -165,7 +169,7 @@ class OrderService:
 
     @staticmethod
     async def _load_orderable_items(
-        session: AsyncSession, request: OrderCreate
+        session: AsyncSession, request: OrderPlaceRequest
     ) -> dict[int, MenuItem]:
         requested_ids = [item.menu_item_id for item in request.items]
         menu_items = await session.scalars(

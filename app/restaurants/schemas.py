@@ -23,7 +23,7 @@ MenuDescription = Annotated[
 ]
 
 
-class RestaurantRead(BaseModel):
+class RestaurantResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -34,12 +34,12 @@ class RestaurantRead(BaseModel):
     delivery_fee_cents: int
 
 
-class RestaurantPage(BaseModel):
-    items: list[RestaurantRead]
+class RestaurantPageResponse(BaseModel):
+    items: list[RestaurantResponse]
     next_cursor: str | None
 
 
-class MenuItemRead(BaseModel):
+class MenuItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -49,19 +49,19 @@ class MenuItemRead(BaseModel):
     is_available: bool
 
 
-class MenuCategoryRead(BaseModel):
+class MenuCategoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
-    items: list[MenuItemRead]
+    items: list[MenuItemResponse]
 
 
-class MenuRead(RestaurantRead):
-    categories: list[MenuCategoryRead]
+class MenuResponse(RestaurantResponse):
+    categories: list[MenuCategoryResponse]
 
 
-class AdminMenuItemRead(BaseModel):
+class AdminMenuItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -74,7 +74,7 @@ class AdminMenuItemRead(BaseModel):
     updated_at: datetime
 
 
-class AdminCategoryRead(BaseModel):
+class AdminMenuCategoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -83,24 +83,24 @@ class AdminCategoryRead(BaseModel):
     is_archived: bool
 
 
-class AdminMenuCategoryRead(AdminCategoryRead):
-    items: list[AdminMenuItemRead]
+class AdminMenuCategoryWithItemsResponse(AdminMenuCategoryResponse):
+    items: list[AdminMenuItemResponse]
 
 
-class AdminMenuRead(RestaurantRead):
+class AdminMenuResponse(RestaurantResponse):
     """Every category and item, archived ones included, with their flags."""
 
     is_active: bool
-    categories: list[AdminMenuCategoryRead]
+    categories: list[AdminMenuCategoryWithItemsResponse]
 
 
-class MenuCategoryCreate(BaseModel):
+class MenuCategoryCreateRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     name: MenuName
 
 
-class MenuCategoryUpdate(BaseModel):
+class MenuCategoryUpdateRequest(BaseModel):
     """Only the fields sent are changed."""
 
     model_config = ConfigDict(extra='forbid')
@@ -115,7 +115,7 @@ class MenuCategoryUpdate(BaseModel):
         return reject_null(value)
 
 
-class MenuItemCreate(BaseModel):
+class MenuItemCreateRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     category_id: int = Field(ge=1, le=MAX_DB_ID)
@@ -125,7 +125,7 @@ class MenuItemCreate(BaseModel):
     is_available: bool = True
 
 
-class MenuItemUpdate(BaseModel):
+class MenuItemUpdateRequest(BaseModel):
     """Only the fields sent are changed; `description` may be set to null to clear it."""
 
     model_config = ConfigDict(extra='forbid')

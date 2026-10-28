@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from app.core.exceptions import NotFoundError
 from app.core.pagination import decode_cursor, encode_cursor
 from app.restaurants.models import MenuCategory, MenuItem, Restaurant
-from app.restaurants.schemas import MenuRead, RestaurantPage, RestaurantRead
+from app.restaurants.schemas import MenuResponse, RestaurantPageResponse, RestaurantResponse
 
 
 class RestaurantNotFound(NotFoundError):
@@ -16,22 +16,22 @@ class RestaurantService:
     @classmethod
     async def list_page(
         cls, session: AsyncSession, *, limit: int, cursor: str | None, cuisine: str | None
-    ) -> RestaurantPage:
+    ) -> RestaurantPageResponse:
         query = cls._build_list_query(limit, cursor, cuisine)
         rows = list(await session.scalars(query))
 
-        return RestaurantPage(
-            items=[RestaurantRead.model_validate(restaurant) for restaurant in rows[:limit]],
+        return RestaurantPageResponse(
+            items=[RestaurantResponse.model_validate(restaurant) for restaurant in rows[:limit]],
             next_cursor=cls._next_cursor(rows, limit),
         )
 
     @classmethod
-    async def get_menu(cls, session: AsyncSession, restaurant_id: int) -> MenuRead:
+    async def get_menu(cls, session: AsyncSession, restaurant_id: int) -> MenuResponse:
         restaurant = await session.scalar(cls._build_menu_query(restaurant_id))
         if restaurant is None:
             raise RestaurantNotFound
 
-        menu = MenuRead.model_validate(restaurant)
+        menu = MenuResponse.model_validate(restaurant)
         menu.categories = [category for category in menu.categories if category.items]
         return menu
 
