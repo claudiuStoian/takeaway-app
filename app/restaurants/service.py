@@ -67,6 +67,4 @@ class RestaurantService:
             select(Restaurant)
             .where(Restaurant.id == restaurant_id, Restaurant.is_active)
             .options(selectinload(visible_categories).selectinload(visible_items))
-            # Re-filter collections the session may already hold unfiltered.
-            .execution_options(populate_existing=True)
         )

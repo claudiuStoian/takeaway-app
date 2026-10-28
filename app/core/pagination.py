@@ -2,7 +2,6 @@ import json
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 from app.core.exceptions import InvalidInputError
-from app.core.limits import MAX_DB_ID
 
 DEFAULT_PAGE_LIMIT = 20
 MAX_PAGE_LIMIT = 100
@@ -29,7 +28,7 @@ def decode_cursor(cursor: str, expected_types: tuple[type, ...]) -> list[str | i
         # Exact type check: bool is an int subclass and must not pass as an id.
         if type(value) is not expected_type:
             raise InvalidCursor
-        if type(value) is int and not 1 <= value <= MAX_DB_ID:
+        if type(value) is int and value < 1:
             raise InvalidCursor
 
     return values

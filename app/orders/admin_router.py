@@ -5,7 +5,6 @@ from fastapi import APIRouter, Query
 
 from app.auth.dependencies import AdminDep
 from app.core.db import SessionDep
-from app.core.limits import MAX_DB_ID
 from app.core.pagination import DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT
 from app.orders.admin_service import AdminOrderService
 from app.orders.models import OrderStatus
@@ -26,7 +25,7 @@ async def list_orders(
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_LIMIT)] = DEFAULT_PAGE_LIMIT,
     cursor: str | None = None,
     status: OrderStatus | None = None,
-    restaurant_id: Annotated[int | None, Query(ge=1, le=MAX_DB_ID)] = None,
+    restaurant_id: Annotated[int | None, Query(ge=1)] = None,
 ) -> AdminOrderPageResponse:
     return await AdminOrderService.list_page(
         session, limit=limit, cursor=cursor, status=status, restaurant_id=restaurant_id

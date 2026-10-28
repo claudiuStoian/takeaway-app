@@ -96,7 +96,11 @@ async def db_session(test_engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 @pytest.fixture
 async def client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     async def override_get_session() -> AsyncIterator[AsyncSession]:
-        yield db_session
+        try:
+            yield db_session
+        finally:
+            # Start each request with an empty identity map, like a fresh production session.
+            db_session.expunge_all()
 
     app.dependency_overrides[get_session] = override_get_session
     try:
@@ -135,11 +139,7 @@ async def committed_client(test_engine: AsyncEngine) -> AsyncIterator[AsyncClien
 
     async def override_get_session() -> AsyncIterator[AsyncSession]:
         async with session_factory() as session:
-            try:
-                yield session
-            except BaseException:
-                await session.rollback()
-                raise
+            yield session
 
     app.dependency_overrides[get_session] = override_get_session
     try:

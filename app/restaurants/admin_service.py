@@ -49,8 +49,6 @@ class AdminMenuService:
             select(Restaurant)
             .where(Restaurant.id == restaurant_id)
             .options(selectinload(Restaurant.categories).selectinload(MenuCategory.items))
-            # Replace collections the session may already hold filtered by the public menu.
-            .execution_options(populate_existing=True)
         )
         if (restaurant := await session.scalar(query)) is None:
             raise RestaurantNotFound

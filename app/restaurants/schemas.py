@@ -4,7 +4,6 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.core.limits import (
-    MAX_DB_ID,
     MAX_DELIVERY_FEE_CENTS,
     MAX_ITEM_PRICE_CENTS,
     MAX_MENU_DESCRIPTION_LENGTH,
@@ -118,7 +117,7 @@ class MenuCategoryUpdateRequest(BaseModel):
 class MenuItemCreateRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
-    category_id: int = Field(ge=1, le=MAX_DB_ID)
+    category_id: int = Field(ge=1)
     name: MenuName
     description: MenuDescription | None = None
     price_cents: int = Field(gt=0, le=MAX_ITEM_PRICE_CENTS)
@@ -130,7 +129,7 @@ class MenuItemUpdateRequest(BaseModel):
 
     model_config = ConfigDict(extra='forbid')
 
-    category_id: int | None = Field(default=None, ge=1, le=MAX_DB_ID)
+    category_id: int | None = Field(default=None, ge=1)
     name: MenuName | None = None
     description: MenuDescription | None = None
     price_cents: int | None = Field(default=None, gt=0, le=MAX_ITEM_PRICE_CENTS)

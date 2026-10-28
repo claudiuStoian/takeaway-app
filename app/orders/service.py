@@ -198,13 +198,7 @@ class OrderService:
 
 
 def build_order_query(*conditions: ColumnElement[bool]) -> Select:
-    return (
-        select(Order)
-        .where(*conditions)
-        .options(selectinload(Order.items))
-        # Re-read rows the session may already hold, e.g. a status changed under a lock.
-        .execution_options(populate_existing=True)
-    )
+    return select(Order).where(*conditions).options(selectinload(Order.items))
 
 
 def build_order_list_query(

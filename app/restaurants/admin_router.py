@@ -4,7 +4,6 @@ from fastapi import APIRouter, Path, status
 
 from app.auth.dependencies import AdminDep
 from app.core.db import SessionDep
-from app.core.limits import MAX_DB_ID
 from app.restaurants.admin_service import AdminMenuService
 from app.restaurants.schemas import (
     AdminMenuCategoryResponse,
@@ -18,7 +17,7 @@ from app.restaurants.schemas import (
 
 router = APIRouter(prefix='/admin/restaurants/{restaurant_id}', tags=['admin menus'])
 
-DbId = Annotated[int, Path(ge=1, le=MAX_DB_ID)]
+DbId = Annotated[int, Path(ge=1)]
 
 
 @router.get('/menu', response_model=AdminMenuResponse)

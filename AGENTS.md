@@ -58,7 +58,8 @@ Code should read like a person wrote it: descriptive names, short functions that
 ## Naming
 
 - **Methods are descriptive verb phrases** that read as a sentence at the call site — `OrderService.advance_status`, `MenuService.set_item_availability`.
-- **Class suffixes state the role**, domain first: `XxxService`, `XxxCreate` / `XxxUpdate` / `XxxRead` (schemas), `XxxSettings`.
+- **Class suffixes state the role**, domain first: `XxxService`, `XxxSettings`.
+- **Pydantic schemas are `Request` / `Response`.** Request bodies are `<Thing><Action>Request` (`OrderPlaceRequest`, `MenuItemUpdateRequest`); a nested part is `<Thing>Request`; auth actions with no entity use the action alone (`SignupRequest`, `LoginRequest`). Responses are `<Thing>Response`, lists `<Thing>PageResponse`. Staff views take the `Admin` prefix (`AdminOrderResponse`). Seed-file inputs end in `Seed`. A response that adds fields to another extends it rather than repeating them.
 - **Booleans** start with `is_` / `has_` / `should_` (`is_available`, `is_active`).
 - **Datetime fields** end in `_at` (`created_at`, `accepted_at`, `delivered_at`) and are timezone-aware UTC.
 - **Enums** are `StrEnum`s defined next to their model (`OrderStatus.OUT_FOR_DELIVERY`).
@@ -69,7 +70,7 @@ Code should read like a person wrote it: descriptive names, short functions that
 - Secrets (JWT signing key, DB password) come from env vars via `pydantic-settings`. Code holds only development placeholders, which the app refuses when `ENVIRONMENT=production`. Real secrets are never committed, never logged.
 - Passwords are hashed with argon2 (`pwdlib`); never stored or logged in plain text. Hashing and verification run via `run_in_threadpool`.
 - JWT: short-lived access tokens; the algorithm is a code constant (`JWT_ALGORITHM`), never a setting, and is passed explicitly on decode; `exp` is required. The user's role and `is_active` are re-read from the DB, not trusted from the token. Refresh tokens are opaque, stored hashed, and rotated on every use via one atomic conditional `UPDATE`.
-- **Transactions:** service write methods end with an explicit `await session.commit()` before returning. The session dependency is `Depends(..., scope="function")`, never commits, and only rolls back on exception and closes — a `yield` dependency's default exit runs after the response is sent. Security writes that must survive an error (revoking tokens on refresh reuse) are committed **before** raising.
+- **Transactions:** service write methods end with an explicit `await session.commit()` before returning. The session dependency is `Depends(..., scope="function")`, never commits, and closing it discards anything uncommitted — a `yield` dependency's default exit runs after the response is sent. Security writes that must survive an error (revoking tokens on refresh reuse) are committed **before** raising.
 - Token issuance, rotation and revoke-all lock the user row (`SELECT … FOR UPDATE`) first, so they can't interleave per user.
 - All DB access goes through SQLAlchemy with bound parameters; no f-string SQL.
 - Order and user bigint ids never leave the server: routes, responses, tokens and pagination cursors use `public_id`. Base64 is not secrecy — never put an internal id in a cursor.

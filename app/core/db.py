@@ -38,12 +38,7 @@ SessionFactory = async_sessionmaker(engine, expire_on_commit=False)
 async def get_session() -> AsyncIterator[AsyncSession]:
     """Yields a session that never commits; services commit their own writes."""
     async with SessionFactory() as session:
-        try:
-            yield session
-        except BaseException:
-            # Any failure, including cancellation, must not leave a half-done transaction open.
-            await session.rollback()
-            raise
+        yield session
 
 
 # scope='function' runs the dependency's exit before the response is sent.
