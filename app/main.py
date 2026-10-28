@@ -2,11 +2,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import router as auth
 from app.core import health
-from app.core.config import settings
 from app.core.db import engine
 from app.core.exceptions import DomainError, handle_domain_error
 from app.orders import admin_router as admin_orders
@@ -31,11 +29,3 @@ app.include_router(restaurants.router, prefix=API_PREFIX)
 app.include_router(orders.router, prefix=API_PREFIX)
 app.include_router(admin_orders.router, prefix=API_PREFIX)
 app.include_router(admin_menus.router, prefix=API_PREFIX)
-
-if settings.cors_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_methods=['*'],
-        allow_headers=['*'],
-    )

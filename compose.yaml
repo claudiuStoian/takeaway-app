@@ -7,7 +7,6 @@ x-app-env: &app-env
   DB_USER: ${DB_USER:-takeaway}
   DB_PASSWORD: ${DB_PASSWORD:-takeaway-dev-password}
   JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-jwt-secret-change-me-before-production}
-  CORS_ORIGINS: ${CORS_ORIGINS:-[]}
 
 services:
   db:
@@ -33,13 +32,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: "no"
 
   api:
     build: .
     environment: *app-env
-    expose:
-      - "8000"
     depends_on:
       db:
         condition: service_healthy

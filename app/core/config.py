@@ -31,8 +31,6 @@ class AppSettings(BaseSettings):
 
     jwt_secret_key: str = DEV_JWT_SECRET_KEY
 
-    cors_origins: list[str] = []
-
     @property
     def database_url(self) -> URL:
         # Built from parts so a password with '@', ':' or '/' isn't misparsed.

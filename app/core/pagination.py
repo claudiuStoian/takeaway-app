@@ -28,7 +28,5 @@ def decode_cursor(cursor: str, expected_types: tuple[type, ...]) -> list[str | i
         # Exact type check: bool is an int subclass and must not pass as an id.
         if type(value) is not expected_type:
             raise InvalidCursor
-        if type(value) is int and value < 1:
-            raise InvalidCursor
 
     return values
