@@ -47,6 +47,12 @@ def anyio_backend() -> str:
     return 'asyncio'
 
 
+def pytest_report_header(config: pytest.Config) -> str:
+    if config.getoption('--create-db'):
+        return f'test database: {TEST_DB_NAME} (dropped and recreated)'
+    return f'test database: {TEST_DB_NAME} (kept from the last run)'
+
+
 @pytest.fixture(scope='session', autouse=True)
 def cheap_password_hashing() -> Iterator[None]:
     with pytest.MonkeyPatch.context() as patch:

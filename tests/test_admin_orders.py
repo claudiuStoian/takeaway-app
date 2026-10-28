@@ -100,12 +100,16 @@ async def test_disallowed_status_change_is_409_and_changes_nothing(
 ) -> None:
     public_id = await place_pending_order(client, db_session, customer)
     await move_order_to(client, admin, public_id, from_status)
+    history_url = f'/api/v1/admin/orders/{public_id}/history'
+    history_before = await client.get(history_url, headers=admin)
 
     response = await change_order_status(client, admin, public_id, to_status)
     seen_by_customer = await client.get(f'/api/v1/orders/{public_id}', headers=customer)
+    history_after = await client.get(history_url, headers=admin)
 
     assert response.status_code == 409
     assert seen_by_customer.json()['status'] == from_status
+    assert history_after.json() == history_before.json()
 
 
 async def test_unknown_status_is_422(
@@ -207,17 +211,6 @@ async def test_history_records_a_customer_cancellation(
     last_event = response.json()[-1]
     assert (last_event['from_status'], last_event['to_status']) == ('pending', 'cancelled')
     assert last_event['actor']['email'] == 'cancel-history@example.com'
-
-
-async def test_failed_status_change_adds_no_history(
-    client: AsyncClient, db_session: AsyncSession, customer: dict[str, str], admin: dict[str, str]
-) -> None:
-    public_id = await place_pending_order(client, db_session, customer)
-    await change_order_status(client, admin, public_id, OrderStatus.DELIVERED)
-
-    response = await client.get(f'/api/v1/admin/orders/{public_id}/history', headers=admin)
-
-    assert [event['to_status'] for event in response.json()] == ['pending']
 
 
 async def test_admin_list_shows_every_customers_orders(

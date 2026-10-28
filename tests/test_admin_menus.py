@@ -193,32 +193,20 @@ async def test_new_categories_go_last_and_can_be_reordered(
     ]
 
 
-async def test_category_shows_publicly_once_it_has_an_item(
-    client: AsyncClient, db_session: AsyncSession, admin: dict[str, str]
-) -> None:
-    restaurant = await add_restaurant(db_session)
-    category_id = await new_category(client, admin, restaurant.id, 'Mains')
-    before = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
-
-    await new_item(client, admin, restaurant.id, category_id, 'Pasta')
-    after = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
-
-    assert before.json()['categories'] == []
-    assert [category['name'] for category in after.json()['categories']] == ['Mains']
-
-
 async def test_renamed_category_shows_its_new_name_publicly(
     client: AsyncClient, db_session: AsyncSession, admin: dict[str, str]
 ) -> None:
     restaurant = await add_restaurant(db_session)
-    category_id = await new_category(client, admin, restaurant.id, 'Mains')
+    category_id = await new_category(client, admin, restaurant.id, 'mains')
     await new_item(client, admin, restaurant.id, category_id, 'Pasta')
 
-    response = await update_category(client, admin, restaurant.id, category_id, {'name': 'Plates'})
+    # A case-only rename must not collide with the category's own name.
+    response = await update_category(client, admin, restaurant.id, category_id, {'name': 'Mains'})
     public_view = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
 
     assert response.status_code == 200
-    assert [category['name'] for category in public_view.json()['categories']] == ['Plates']
+    assert response.json()['name'] == 'Mains'
+    assert [category['name'] for category in public_view.json()['categories']] == ['Mains']
 
 
 async def test_archived_category_hides_and_blocks_its_items_until_unarchived(
@@ -270,18 +258,6 @@ async def test_duplicate_category_name_is_409_ignoring_case(
     assert created.status_code == 409
     assert renamed.status_code == 409
     assert [category['name'] for category in admin_view.json()['categories']] == ['Pizza', 'Pasta']
-
-
-async def test_category_can_change_the_case_of_its_own_name(
-    client: AsyncClient, db_session: AsyncSession, admin: dict[str, str]
-) -> None:
-    restaurant = await add_restaurant(db_session)
-    category_id = await new_category(client, admin, restaurant.id, 'pizza')
-
-    response = await update_category(client, admin, restaurant.id, category_id, {'name': 'Pizza'})
-
-    assert response.status_code == 200
-    assert response.json()['name'] == 'Pizza'
 
 
 async def test_same_category_name_is_allowed_in_another_restaurant(
@@ -423,38 +399,29 @@ async def test_duplicate_item_name_in_a_category_is_409_ignoring_case(
     ] == [['Margherita', 'Diavola'], ['Margherita']]
 
 
-async def test_item_can_move_to_another_category_of_its_restaurant(
+async def test_item_moves_between_categories_and_hides_in_an_archived_one(
     client: AsyncClient, db_session: AsyncSession, admin: dict[str, str]
 ) -> None:
     restaurant = await add_restaurant(db_session)
     specials = await new_category(client, admin, restaurant.id, 'Specials')
     pizza = await new_category(client, admin, restaurant.id, 'Pizza')
-    item_id = await new_item(client, admin, restaurant.id, specials, 'Margherita')
-
-    response = await update_item(client, admin, restaurant.id, item_id, {'category_id': pizza})
-    public_view = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
-
-    assert response.status_code == 200
-    assert [
-        (category['name'], [item['name'] for item in category['items']])
-        for category in public_view.json()['categories']
-    ] == [('Pizza', ['Margherita'])]
-
-
-async def test_item_moved_into_an_archived_category_is_hidden(
-    client: AsyncClient, db_session: AsyncSession, admin: dict[str, str]
-) -> None:
-    restaurant = await add_restaurant(db_session)
-    pizza = await new_category(client, admin, restaurant.id, 'Pizza')
     old_menu = await new_category(client, admin, restaurant.id, 'Old Menu')
     await update_category(client, admin, restaurant.id, old_menu, {'is_archived': True})
-    item_id = await new_item(client, admin, restaurant.id, pizza, 'Margherita')
+    item_id = await new_item(client, admin, restaurant.id, specials, 'Margherita')
 
-    response = await update_item(client, admin, restaurant.id, item_id, {'category_id': old_menu})
-    public_view = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
+    to_pizza = await update_item(client, admin, restaurant.id, item_id, {'category_id': pizza})
+    menu_in_pizza = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
+    to_old_menu = await update_item(
+        client, admin, restaurant.id, item_id, {'category_id': old_menu}
+    )
+    menu_in_old_menu = await client.get(f'/api/v1/restaurants/{restaurant.id}/menu')
 
-    assert response.status_code == 200
-    assert visible_item_names(public_view.json()) == []
+    assert (to_pizza.status_code, to_old_menu.status_code) == (200, 200)
+    assert [
+        (category['name'], [item['name'] for item in category['items']])
+        for category in menu_in_pizza.json()['categories']
+    ] == [('Pizza', ['Margherita'])]
+    assert visible_item_names(menu_in_old_menu.json()) == []
 
 
 async def test_category_of_another_restaurant_in_the_body_is_422(
