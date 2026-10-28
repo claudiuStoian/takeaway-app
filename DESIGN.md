@@ -55,7 +55,7 @@ A double-click or a network retry must not create two orders.
 
 ## Auth
 
-Custom auth with PyJWT and argon2 (`pwdlib`), not fastapi-users, which is in maintenance mode.
+Custom auth with PyJWT and argon2 (`pwdlib`).
 
 - **Access tokens** are JWTs valid for 15 minutes. The algorithm (HS256) is a code constant, never a setting, so configuration can't weaken verification. `exp` is required.
 - **Role and `is_active` are read from the database on every request**, not trusted from the token. Demoting or deactivating someone takes effect at once. Cost: one primary-key lookup per request.
