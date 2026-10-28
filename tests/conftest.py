@@ -191,7 +191,8 @@ def _create_test_db_if_missing(db_settings: AppSettings) -> None:
 
 def _upgrade_to_head(db_settings: AppSettings) -> None:
     config = Config(str(ALEMBIC_INI))
-    config.set_main_option('sqlalchemy.url', db_settings.database_url.replace('%', '%%'))
+    database_url = db_settings.database_url.render_as_string(hide_password=False)
+    config.set_main_option('sqlalchemy.url', database_url.replace('%', '%%'))
     config.attributes['configure_logger'] = False
     command.upgrade(config, 'head')
 

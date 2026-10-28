@@ -1,8 +1,9 @@
 from enum import StrEnum
 from typing import Self
 
-from pydantic import computed_field, model_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import URL
 
 DEV_DB_PASSWORD = 'takeaway-dev-password'
 DEV_JWT_SECRET_KEY = 'dev-only-jwt-secret-change-me-before-production'
@@ -32,12 +33,16 @@ class AppSettings(BaseSettings):
 
     cors_origins: list[str] = []
 
-    @computed_field
     @property
-    def database_url(self) -> str:
-        return (
-            f'postgresql+psycopg://{self.db_user}:{self.db_password}'
-            f'@{self.db_host}:{self.db_port}/{self.db_name}'
+    def database_url(self) -> URL:
+        # Built from parts so a password with '@', ':' or '/' isn't misparsed.
+        return URL.create(
+            'postgresql+psycopg',
+            username=self.db_user,
+            password=self.db_password,
+            host=self.db_host,
+            port=self.db_port,
+            database=self.db_name,
         )
 
     @model_validator(mode='after')

@@ -149,11 +149,8 @@ class AdminMenuService:
 
     @staticmethod
     async def _lock_restaurant(session: AsyncSession, restaurant_id: int) -> None:
-        # NO KEY UPDATE doesn't block the FK check of an order being placed at this restaurant.
         locked_id = await session.scalar(
-            select(Restaurant.id)
-            .where(Restaurant.id == restaurant_id)
-            .with_for_update(key_share=True)
+            select(Restaurant.id).where(Restaurant.id == restaurant_id).with_for_update()
         )
         if locked_id is None:
             raise RestaurantNotFound

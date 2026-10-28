@@ -8,7 +8,6 @@ from app.core.limits import (
     MAX_ITEM_PRICE_CENTS,
     MAX_MENU_DESCRIPTION_LENGTH,
     MAX_MENU_NAME_LENGTH,
-    MAX_MENU_POSITION,
 )
 from tests.builders import (
     UNKNOWN_ID,
@@ -59,7 +58,6 @@ INVALID_CATEGORY_UPDATES = {
     'null name': {'name': None},
     'null position': {'position': None},
     'negative position': {'position': -1},
-    'position over the limit': {'position': MAX_MENU_POSITION + 1},
     'blank name': {'name': ''},
 }
 

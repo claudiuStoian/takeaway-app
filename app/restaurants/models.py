@@ -21,8 +21,6 @@ class Restaurant(Base):
     __tablename__ = 'restaurants'
     __table_args__ = (
         CheckConstraint('delivery_fee_cents >= 0', name='delivery_fee_cents_non_negative'),
-        Index('ix_restaurants_name_id', 'name', 'id'),
-        Index('ix_restaurants_cuisine_name_id', 'cuisine', 'name', 'id'),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)

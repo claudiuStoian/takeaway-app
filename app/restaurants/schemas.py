@@ -8,7 +8,6 @@ from app.core.limits import (
     MAX_ITEM_PRICE_CENTS,
     MAX_MENU_DESCRIPTION_LENGTH,
     MAX_MENU_NAME_LENGTH,
-    MAX_MENU_POSITION,
 )
 
 CUISINE_PATTERN = r'^[a-z]+(-[a-z]+)*$'
@@ -105,7 +104,7 @@ class MenuCategoryUpdateRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     name: MenuName | None = None
-    position: int | None = Field(default=None, ge=0, le=MAX_MENU_POSITION)
+    position: int | None = Field(default=None, ge=0)
     is_archived: bool | None = None
 
     @field_validator('name', 'position', 'is_archived')

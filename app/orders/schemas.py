@@ -2,7 +2,14 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+)
 
 from app.auth.schemas import UserSummaryResponse
 from app.core.limits import (
@@ -11,11 +18,18 @@ from app.core.limits import (
     MAX_ORDER_NOTES_LENGTH,
     MAX_PHONE_LENGTH,
     MAX_QUANTITY_PER_ITEM,
-    MIN_PHONE_LENGTH,
+    MIN_PHONE_DIGITS,
 )
 from app.orders.models import OrderStatus
 
 PHONE_PATTERN = r'^[0-9 +()-]+$'
+
+
+def require_phone_digits(phone: str) -> str:
+    if sum(character.isdigit() for character in phone) < MIN_PHONE_DIGITS:
+        raise ValueError(f'must contain at least {MIN_PHONE_DIGITS} digits')
+    return phone
+
 
 DeliveryAddress = Annotated[
     str,
@@ -23,12 +37,8 @@ DeliveryAddress = Annotated[
 ]
 Phone = Annotated[
     str,
-    StringConstraints(
-        strip_whitespace=True,
-        min_length=MIN_PHONE_LENGTH,
-        max_length=MAX_PHONE_LENGTH,
-        pattern=PHONE_PATTERN,
-    ),
+    StringConstraints(strip_whitespace=True, max_length=MAX_PHONE_LENGTH, pattern=PHONE_PATTERN),
+    AfterValidator(require_phone_digits),
 ]
 OrderNotes = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=MAX_ORDER_NOTES_LENGTH)

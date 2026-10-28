@@ -16,7 +16,8 @@ if config.config_file_name is not None and config.attributes.get('configure_logg
 
 # Tests pass their own URL (takeaway_test); everything else uses the app settings.
 if not config.get_main_option('sqlalchemy.url'):
-    config.set_main_option('sqlalchemy.url', settings.database_url.replace('%', '%%'))
+    database_url = settings.database_url.render_as_string(hide_password=False)
+    config.set_main_option('sqlalchemy.url', database_url.replace('%', '%%'))
 
 target_metadata = Base.metadata
 
