@@ -130,7 +130,10 @@ class OrderService:
         if (order := await session.scalar(query)) is None:
             raise OrderNotFound
 
-        session.add(transition_order(order, OrderStatus.CANCELLED, customer, CUSTOMER_TRANSITIONS))
+        event = apply_status_transition(
+            order, OrderStatus.CANCELLED, customer, CUSTOMER_TRANSITIONS
+        )
+        session.add(event)
         await session.commit()
         return OrderResponse.model_validate(order)
 
@@ -226,7 +229,7 @@ def next_order_cursor(rows: list[Order], limit: int) -> str | None:
     return encode_cursor([last_shown.created_at.isoformat(), str(last_shown.public_id)])
 
 
-def transition_order(
+def apply_status_transition(
     order: Order,
     to_status: OrderStatus,
     actor: User,

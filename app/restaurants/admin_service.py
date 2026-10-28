@@ -157,14 +157,17 @@ class AdminMenuService:
 
     @staticmethod
     async def _ensure_category_name_is_free(
-        session: AsyncSession, restaurant_id: int, name: str, category_id: int | None = None
+        session: AsyncSession,
+        restaurant_id: int,
+        name: str,
+        exclude_category_id: int | None = None,
     ) -> None:
         query = select(MenuCategory.id).where(
             MenuCategory.restaurant_id == restaurant_id,
             func.lower(MenuCategory.name) == func.lower(name),
         )
-        if category_id is not None:
-            query = query.where(MenuCategory.id != category_id)
+        if exclude_category_id is not None:
+            query = query.where(MenuCategory.id != exclude_category_id)
         if await session.scalar(query) is not None:
             raise DuplicateCategoryName
 

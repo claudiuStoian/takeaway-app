@@ -10,10 +10,10 @@ from app.orders.schemas import AdminOrderPageResponse, AdminOrderResponse, Order
 from app.orders.service import (
     ADMIN_TRANSITIONS,
     OrderNotFound,
+    apply_status_transition,
     build_order_list_query,
     build_order_query,
     next_order_cursor,
-    transition_order,
 )
 
 
@@ -52,7 +52,8 @@ class AdminOrderService:
         if (order := await session.scalar(query)) is None:
             raise OrderNotFound
 
-        session.add(transition_order(order, to_status, admin, ADMIN_TRANSITIONS))
+        event = apply_status_transition(order, to_status, admin, ADMIN_TRANSITIONS)
+        session.add(event)
         await session.commit()
         return AdminOrderResponse.model_validate(order)
 
