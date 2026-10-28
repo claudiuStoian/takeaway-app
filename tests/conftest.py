@@ -7,6 +7,8 @@ from alembic import command
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from psycopg import sql
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -17,6 +19,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 
+from app.core import security
 from app.core.config import AppSettings, settings
 from app.core.db import get_session
 from app.main import app
@@ -26,6 +29,9 @@ TEST_DB_NAME = 'takeaway_test'
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
 
 test_settings = settings.model_copy(update={'db_name': TEST_DB_NAME})
+
+# Tests check the auth flow, not the hash's cost, so argon2 runs with its minimum work.
+CHEAP_PASSWORD_HASH = PasswordHash((Argon2Hasher(time_cost=1, memory_cost=8, parallelism=1),))
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -39,6 +45,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope='session')
 def anyio_backend() -> str:
     return 'asyncio'
+
+
+@pytest.fixture(scope='session', autouse=True)
+def cheap_password_hashing() -> Iterator[None]:
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(security, 'password_hash', CHEAP_PASSWORD_HASH)
+        yield
 
 
 @pytest.fixture(scope='session')

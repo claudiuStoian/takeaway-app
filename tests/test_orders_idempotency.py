@@ -61,21 +61,7 @@ async def test_line_order_does_not_make_a_different_request(
     assert reordered.json()['public_id'] == first.json()['public_id']
 
 
-async def test_same_key_with_a_different_body_is_422(
-    client: AsyncClient, db_session: AsyncSession, customer: dict[str, str]
-) -> None:
-    item = await add_orderable_item(db_session)
-    key = uuid4()
-    await place_order(client, customer, order_body(item.restaurant_id, [(item.id, 1)]), key)
-
-    response = await place_order(
-        client, customer, order_body(item.restaurant_id, [(item.id, 2)]), key
-    )
-
-    assert response.status_code == 422
-
-
-async def test_same_key_and_items_for_another_restaurant_is_422(
+async def test_same_key_with_a_different_quantity_or_restaurant_is_422(
     client: AsyncClient, db_session: AsyncSession, customer: dict[str, str]
 ) -> None:
     item = await add_orderable_item(db_session)

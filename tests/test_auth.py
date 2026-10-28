@@ -148,36 +148,27 @@ async def test_tampered_token_is_401(client: AsyncClient) -> None:
     assert response.status_code == 401
 
 
-async def test_expired_token_is_401(client: AsyncClient) -> None:
-    email = new_email()
-    public_id = (await signup(client, email)).json()['public_id']
-    issued_at = datetime.now(UTC) - timedelta(hours=1)
-    expired = jwt.encode(
-        {'sub': public_id, 'iat': issued_at, 'exp': issued_at + timedelta(minutes=15)},
-        settings.jwt_secret_key,
-        algorithm=JWT_ALGORITHM,
-    )
-
-    response = await client.get('/api/v1/me', headers={'Authorization': f'Bearer {expired}'})
-
-    assert response.status_code == 401
-
-
-async def test_token_without_an_expiry_is_401(client: AsyncClient) -> None:
-    public_id = (await signup(client, new_email())).json()['public_id']
-    token = jwt.encode({'sub': public_id}, settings.jwt_secret_key, algorithm=JWT_ALGORITHM)
-
-    response = await client.get('/api/v1/me', headers={'Authorization': f'Bearer {token}'})
-
-    assert response.status_code == 401
-
-
-async def test_token_for_an_unknown_user_is_401(client: AsyncClient) -> None:
-    token = jwt.encode(
-        {'sub': str(uuid4()), 'exp': datetime.now(UTC) + timedelta(minutes=15)},
-        settings.jwt_secret_key,
-        algorithm=JWT_ALGORITHM,
-    )
+@pytest.mark.parametrize(
+    ('is_real_user', 'expires_in'),
+    [
+        (True, timedelta(minutes=-45)),
+        (True, None),
+        (False, timedelta(minutes=15)),
+    ],
+    ids=['expired', 'no-expiry', 'unknown-user'],
+)
+async def test_validly_signed_but_unusable_token_is_401(
+    client: AsyncClient, is_real_user: bool, expires_in: timedelta | None
+) -> None:
+    # A real subject, so expired and no-expiry can only fail on the expiry itself.
+    if is_real_user:
+        subject = (await signup(client, new_email())).json()['public_id']
+    else:
+        subject = str(uuid4())
+    claims = {'sub': subject}
+    if expires_in is not None:
+        claims['exp'] = datetime.now(UTC) + expires_in
+    token = jwt.encode(claims, settings.jwt_secret_key, algorithm=JWT_ALGORITHM)
 
     response = await client.get('/api/v1/me', headers={'Authorization': f'Bearer {token}'})
 

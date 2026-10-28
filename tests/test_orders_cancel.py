@@ -17,17 +17,19 @@ from tests.builders import (
 pytestmark = pytest.mark.anyio
 
 
-async def test_customer_can_cancel_a_pending_order(
+async def test_customer_can_cancel_a_pending_order_only_once(
     client: AsyncClient, db_session: AsyncSession, customer: dict[str, str]
 ) -> None:
     public_id = await place_pending_order(client, db_session, customer)
 
     cancelled = await client.post(f'/api/v1/orders/{public_id}/cancel', headers=customer)
     afterwards = await client.get(f'/api/v1/orders/{public_id}', headers=customer)
+    cancelled_again = await client.post(f'/api/v1/orders/{public_id}/cancel', headers=customer)
 
     assert cancelled.status_code == 200
     assert cancelled.json()['status'] == 'cancelled'
     assert afterwards.json()['status'] == 'cancelled'
+    assert cancelled_again.status_code == 409
 
 
 async def test_cancellation_is_saved(
@@ -45,17 +47,6 @@ async def test_cancellation_is_saved(
     afterwards = await committed_client.get(f'/api/v1/orders/{public_id}', headers=customer)
 
     assert afterwards.json()['status'] == 'cancelled'
-
-
-async def test_cancelling_twice_is_409(
-    client: AsyncClient, db_session: AsyncSession, customer: dict[str, str]
-) -> None:
-    public_id = await place_pending_order(client, db_session, customer)
-    await client.post(f'/api/v1/orders/{public_id}/cancel', headers=customer)
-
-    response = await client.post(f'/api/v1/orders/{public_id}/cancel', headers=customer)
-
-    assert response.status_code == 409
 
 
 @pytest.mark.parametrize(
