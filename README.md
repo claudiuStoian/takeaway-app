@@ -121,3 +121,13 @@ nginx/           reverse proxy config
 tests/           functional tests and fixtures
 frontend/        manual-testing UI
 ```
+
+## How it was built
+
+Built with assistance from Claude Code and Codex. I made the architecture
+decisions, reviewed the generated code, and validated the implementation
+through functional tests and manual testing.
+
+[`DESIGN.md`](DESIGN.md) explains the main decisions and tradeoffs.
+[`AGENTS.md`](AGENTS.md) records the domain rules and coding conventions
+used to guide both agents.

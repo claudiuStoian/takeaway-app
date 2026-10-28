@@ -11,7 +11,7 @@ from app.core.exceptions import ForbiddenError, NotAuthenticatedError
 
 logger = getLogger(__name__)
 
-# auto_error=False so a missing token goes through our 401, not FastAPI's 403.
+# auto_error=False so a missing token raises our NotAuthenticatedError, same shape as a bad one.
 bearer_scheme = HTTPBearer(auto_error=False)
 
 

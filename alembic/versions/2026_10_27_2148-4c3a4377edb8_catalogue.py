@@ -38,10 +38,6 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_restaurants')),
     )
-    op.create_index(
-        'ix_restaurants_cuisine_name_id', 'restaurants', ['cuisine', 'name', 'id'], unique=False
-    )
-    op.create_index('ix_restaurants_name_id', 'restaurants', ['name', 'id'], unique=False)
     op.create_table(
         'menu_categories',
         sa.Column('id', sa.BigInteger(), sa.Identity(always=False), nullable=False),
@@ -108,6 +104,4 @@ def downgrade() -> None:
     op.drop_table('menu_items')
     op.drop_index('uq_menu_categories_restaurant_id_lower_name', table_name='menu_categories')
     op.drop_table('menu_categories')
-    op.drop_index('ix_restaurants_name_id', table_name='restaurants')
-    op.drop_index('ix_restaurants_cuisine_name_id', table_name='restaurants')
     op.drop_table('restaurants')
