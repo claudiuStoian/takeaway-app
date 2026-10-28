@@ -59,15 +59,8 @@ class MenuResponse(RestaurantResponse):
     categories: list[MenuCategoryResponse]
 
 
-class AdminMenuItemResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
+class AdminMenuItemResponse(MenuItemResponse):
     category_id: int
-    name: str
-    description: str | None
-    price_cents: int
-    is_available: bool
     is_archived: bool
     updated_at: datetime
 

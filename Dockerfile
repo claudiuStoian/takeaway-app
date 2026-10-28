@@ -13,7 +13,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --locked --no-dev --no-install-project
 
-COPY . .
+COPY alembic.ini ./
+COPY alembic/ alembic/
+COPY app/ app/
+COPY seed/ seed/
 
 RUN useradd --system --no-create-home app
 USER app
