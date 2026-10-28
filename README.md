@@ -1,10 +1,10 @@
 # Takeaway API
 
-Backend for a small takeaway platform. Customers browse restaurants and menus, place orders and track them; staff (admins) manage menus and move orders through their statuses.
+Backend for a small takeaway platform. Customers browse restaurants, place orders and track them; admins manage menus and move orders through their statuses.
 
 FastAPI · async SQLAlchemy 2 + psycopg 3 · PostgreSQL 18 · Alembic · Pydantic · Docker Compose · Nginx · Python 3.14
 
-> **Status:** public catalogue, accounts (signup, login, roles), customer orders and admin order handling. Admin menu management lands next.
+Design decisions: [`DESIGN.md`](DESIGN.md).
 
 ## Quick start
 
@@ -12,14 +12,12 @@ FastAPI · async SQLAlchemy 2 + psycopg 3 · PostgreSQL 18 · Alembic · Pydanti
 docker compose up --build
 ```
 
-No `.env` needed — every setting has a development default (see `.env.example`). Then open:
+No `.env` needed; every setting has a development default (see `.env.example`). Compose starts Postgres, runs migrations, seeds demo data and serves the API behind Nginx on port 80:
 
 - API docs (Swagger): http://localhost/docs
-- Health check: http://localhost/health — `200` when the API can reach the database, `503` otherwise
+- Health check: http://localhost/health
 
-Compose starts Postgres, runs migrations and seeds demo data once (`migrate`), then the API (`uvicorn --workers 2`) behind Nginx. Only Nginx is published (port 80); Postgres listens on `127.0.0.1:5432` for local development.
-
-Seed data: 12 fictional restaurants with categorised menus in USD (`seed/restaurants.json`) and four demo users (`seed/users.json`). Each is inserted only when its table is empty, so re-running never overwrites edits. Demo users are **never** seeded with `ENVIRONMENT=production` — their passwords are public:
+The seed has 12 fictional restaurants and four demo users (skipped when `ENVIRONMENT=production`):
 
 | Email | Password | Role |
 |---|---|---|
@@ -28,24 +26,31 @@ Seed data: 12 fictional restaurants with categorised menus in USD (`seed/restaur
 | `customer1@example.com` | `customer1-demo` | customer |
 | `customer2@example.com` | `customer2-demo` | customer |
 
+In Swagger, log in, then paste the `access_token` into **Authorize**.
+
+## Test UI (optional)
+
+A small React app in `frontend/` for clicking through the API by hand. Manual testing only: not production code and not part of Compose. Needs Node 20.19+ or 22.12+ and the compose stack running:
+
 ```bash
-curl -s localhost/api/v1/restaurants
-curl -s 'localhost/api/v1/restaurants?cuisine=thai'
-curl -s localhost/api/v1/restaurants/1/menu
+cd frontend
+npm ci
+npm run dev
 ```
 
-## API overview
+Open the URL Vite prints and use the demo-login buttons. The token is kept in `sessionStorage`, so each tab has its own login (e.g. admin in one, customer in another).
+
+## API
 
 | Area | Endpoints |
 |---|---|
-| Catalogue (public) | `GET /api/v1/restaurants` (cursor, `?cuisine=`) · `GET /api/v1/restaurants/{restaurant_id}/menu` |
+| Catalogue (public) | `GET /api/v1/restaurants` (`?cuisine=`) · `GET /api/v1/restaurants/{restaurant_id}/menu` |
 | Accounts | `POST /api/v1/auth/signup` · `POST /api/v1/auth/login` · `GET /api/v1/me` |
-| Orders (customer) | `POST /api/v1/orders` (`Idempotency-Key` required) · `GET /api/v1/orders` (mine, cursor) · `GET /api/v1/orders/{public_id}` · `POST /api/v1/orders/{public_id}/cancel` |
-| Admin — orders | `GET /api/v1/admin/orders` (cursor, `?status=`, `?restaurant_id=`) · `POST /api/v1/admin/orders/{public_id}/status` `{"to": "<status>"}` · `GET /api/v1/admin/orders/{public_id}/history` |
+| Orders (customer) | `POST /api/v1/orders` · `GET /api/v1/orders` · `GET /api/v1/orders/{public_id}` · `POST /api/v1/orders/{public_id}/cancel` |
+| Admin: orders | `GET /api/v1/admin/orders` (`?status=`, `?restaurant_id=`) · `POST /api/v1/admin/orders/{public_id}/status` · `GET /api/v1/admin/orders/{public_id}/history` |
+| Admin: menus | under `/api/v1/admin/restaurants/{restaurant_id}`: `GET /menu` · `POST /categories` · `PATCH /categories/{category_id}` · `POST /items` · `PATCH /items/{item_id}` |
 
-Lists return `{"items": [...], "next_cursor": "..."}`; pass `?cursor=` for the next page (`null` = end) and `?limit=` (1–100, default 20). Errors use FastAPI's `{"detail": ...}` shape.
-
-The menu lists only what a customer can order or see: inactive restaurants are `404`, archived categories and items are hidden, and sold-out items stay listed with `"is_available": false`. Money is integer cents (`*_cents`), USD.
+Lists return `{"items": [...], "next_cursor": "..."}`; pass `?cursor=` for the next page (`null` means the end) and `?limit=` (1–100, default 20). Errors use FastAPI's `{"detail": ...}` shape.
 
 ### Order lifecycle
 
@@ -56,32 +61,24 @@ pending ──admin──▶ accepted ──admin──▶ out_for_delivery ─�
    └─customer──▶ cancelled ◀──admin── (from accepted)
 ```
 
-Any other move is `409`, including a repeat of the current status. The status endpoint takes the **target** status, never "next": an admin acting on a stale screen gets `409` instead of skipping a step, and two admins accepting the same order at once get one `200` and one `409`. Every change is recorded with who made it and when (`…/history`).
+Any other move is `409`. Admins send the target status (`{"to": "accepted"}`), so a stale screen can't skip a step.
 
-## Auth
+### Rules
 
-```bash
-curl -s localhost/api/v1/auth/signup -H 'Content-Type: application/json' \
-  -d '{"email": "sam@example.com", "password": "correct-horse", "full_name": "Sam"}'
-TOKEN=$(curl -s localhost/api/v1/auth/login -H 'Content-Type: application/json' \
-  -d '{"email": "sam@example.com", "password": "correct-horse"}' | jq -r .access_token)
-curl -s localhost/api/v1/me -H "Authorization: Bearer $TOKEN"
-```
+- **Money** is integer cents (`price_cents`, `total_cents`), USD. The server computes all totals.
+- **Orders keep a copy** of item names, prices and the delivery address; menu changes never alter past orders.
+- **Nothing is deleted.** Items and categories are archived (`is_archived`) or marked sold out (`is_available`). `PATCH` changes only the fields sent.
+- **Customers only see their own orders.** Someone else's order is `404`.
+- **Signup always creates a customer.** Admins are created with the CLI (below).
+- **Login and signup are rate-limited** by Nginx: 10 per minute per IP (burst of 5), then `429`.
 
-In Swagger, log in, then paste the `access_token` into **Authorize**.
+### Known limitations
 
-- **Signup** always creates a `customer` (a `role` in the body is ignored) and returns `201` with the user; a registered email is `409`. Passwords are 8–128 characters; emails are stored lowercased.
-- **Login** returns a 15-minute access token (JWT, HS256). Wrong password, unknown email and deactivated account all get the same `401`.
-- **Every request** re-reads the user's role and `is_active` from the database, so demotion or deactivation applies immediately. Admin-only endpoints are `403` for customers.
-- **Admins** are created with the CLI, never through the API. The password is prompted, never passed as an argument; re-running for an existing admin changes nothing:
-  ```bash
-  docker compose run --rm migrate python -m app.cli create-admin --email ops@example.com --full-name 'Ops'
-  ```
-- **Rate limit:** Nginx allows 10 login/signup requests per minute per IP (burst 5), then `429`.
-- **Not yet:** refresh tokens and logout — clients log in again when the token expires.
-- **Transport:** passwords and tokens travel in plain text inside the request body and headers; local compose serves plain HTTP. Production needs HTTPS (TLS at Nginx or a load balancer).
-
-With `ENVIRONMENT=production`, the app refuses to start while `JWT_SECRET_KEY` or `DB_PASSWORD` still has its development default, or when `JWT_SECRET_KEY` is shorter than 32 bytes (the HS256 minimum, RFC 7518 §3.2).
+- **No refresh tokens or logout.** Access tokens last 15 minutes, then the client logs in again. See [`DESIGN.md`](DESIGN.md#next-steps).
+- **No restaurant management API.** Restaurants come from the seed.
+- **Order status is polled**, not pushed.
+- **Plain HTTP locally.** Production needs HTTPS in front.
+- **Passwords are 8–128 characters.** NIST SP 800-63B asks for 15 when the password is the only factor.
 
 ## Development
 
@@ -89,34 +86,38 @@ With `ENVIRONMENT=production`, the app refuses to start while `JWT_SECRET_KEY` o
 docker compose up -d db                  # Postgres on 127.0.0.1:5432
 uv sync
 uv run alembic upgrade head
-uv run python -m app.cli seed            # idempotent
-uv run python -m app.cli create-admin --email you@example.com --full-name 'You'
+uv run python -m app.cli seed            # safe to re-run
 uv run uvicorn app.main:app --reload
+```
+
+Create an admin (password is prompted; re-running for an existing admin changes nothing):
+
+```bash
+docker compose run --rm migrate python -m app.cli create-admin --email ops@example.com --full-name 'Ops'
 ```
 
 ### Tests
 
-```bash
-uv run pytest               # functional tests via the HTTP API against real Postgres
-uv run pytest --create-db   # drop and recreate the test database first
-```
+Functional tests through the HTTP API against a real Postgres database (`takeaway_test`), each in a rolled-back transaction.
 
-Tests use a separate `takeaway_test` database in the compose Postgres. It is created on first use, migrated to the latest revision, and kept between runs; each test runs in a transaction that is rolled back.
+```bash
+uv run pytest               # needs the compose db running
+uv run pytest --create-db   # drops and recreates the test database first
+```
 
 ## Project layout
 
 ```
 app/
   main.py        FastAPI app
-  cli.py         operational commands (seed, create-admin)
-  core/          config, db session, errors, security (hashing, JWT), pagination, limits, health check
-  auth/          users, roles, signup, login, current-user and admin dependencies
-  restaurants/   restaurants, categories, menu items
-  orders/        orders, items, status transitions, history; admin routes in admin_router.py
+  cli.py         seed, create-admin
+  core/          config, database, security, pagination, limits, health check
+  auth/          users, signup, login, current-user and admin dependencies
+  restaurants/   restaurants and menus (admin routes in admin_router.py)
+  orders/        orders and status changes (admin routes in admin_router.py)
 alembic/         migrations
-seed/            demo data (restaurants.json, users.json)
+seed/            demo data
 nginx/           reverse proxy config
-tests/           fixtures (test DB, rolled-back session, HTTP client)
+tests/           functional tests and fixtures
+frontend/        manual-testing UI
 ```
-
-Each feature folder holds `models.py`, `schemas.py`, `service.py`, `router.py`; routers call services, services call models.

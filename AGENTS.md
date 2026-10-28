@@ -18,19 +18,19 @@ Always read this page first.
 
 ## Project shape
 
-Backend for a small takeaway platform. Customers browse restaurants and menus, place orders, and track order status. Staff (`admin` role) manage menus and move orders through their statuses. Backend only — no frontend in this repo.
+Backend for a small takeaway platform. Customers browse restaurants and menus, place orders, and track order status. Staff (`admin` role) manage menus and move orders through their statuses. Backend, plus a small React UI in `frontend/` for manual testing only; it is not production code and is not part of Docker Compose.
 
-- **Stack:** Python 3.14; FastAPI (async endpoints); PostgreSQL 18 via async SQLAlchemy 2 (`AsyncSession`, psycopg 3) with Alembic migrations; separate Pydantic request/response schemas (not SQLModel); custom JWT auth (PyJWT + `pwdlib[argon2]`); `pydantic-settings` for config; Docker Compose; Nginx as reverse proxy in front of `uvicorn --workers`.
-- **Feature-first layout.** Group code by domain feature, not technical role. Each feature is a co-located folder — e.g. `app/auth/` (users, roles, login, tokens), `app/restaurants/` (restaurants, menus, menu items), `app/orders/` (orders, order items, status transitions) — holding its own `models.py`, `schemas.py`, `service.py`, and `router.py` where applicable. Cross-cutting infrastructure lives in `app/core/` (`config.py`, `db.py`, `security.py`). The dependency rule is router → `service.py` → `models.py`; an outer layer never reaches past its neighbor.
+- **Stack:** Python 3.14; FastAPI (async endpoints); PostgreSQL 18 via async SQLAlchemy 2 (`AsyncSession`, psycopg 3) with Alembic migrations; separate Pydantic request/response schemas (not SQLModel); custom JWT auth (PyJWT + `pwdlib[argon2]`); `pydantic-settings` for config; Docker Compose; Nginx as reverse proxy in front of `uvicorn`.
+- **Feature-first layout.** Group code by domain feature, not technical role. Each feature is a co-located folder — e.g. `app/auth/` (users, roles, login, tokens), `app/restaurants/` (restaurants, menus, menu items), `app/orders/` (orders, order items, status transitions) — holding its own `models.py`, `schemas.py`, `service.py`, and `router.py` where applicable. Cross-cutting infrastructure lives in `app/core/` (`config.py`, `db.py`, `security.py`). Routers handle HTTP only (auth dependencies, schemas, status codes) and never query the database or make business decisions; those live in `service.py`. Importing a domain enum or model type across layers is fine.
 
 ## Domain rules
 
 - **Order status is a state machine.** Allowed transitions are declared once (e.g. a mapping on the `orders` service) and every status change goes through it; an illegal transition is a `409`, never a silent overwrite. Base flow: `pending → accepted → out_for_delivery → delivered`.
 - **Order items snapshot price and name** at order time; orders snapshot the delivery address. Editing or removing a menu item never changes past orders.
-- **Idempotent wherever possible** — seeds, CLI commands, migrations' data steps, and any operation a client may retry. Running something twice must not duplicate or overwrite data.
+- **Idempotent where a retry is expected:** seeds, CLI commands, migrations' data steps, and order placement. Running them twice must not duplicate or overwrite data. Status changes are not idempotent: repeating one is an illegal transition (`409`).
 - **Soft delete only.** Menu items use `is_available` / `is_archived`, categories `is_archived`; an item is visible and orderable only if neither it nor its category is archived. No hard-delete endpoints, jobs or cascades in code.
 - **Integrity in the DB where it can live there:** composite FK keeps an item's category in the same restaurant; `CHECK`s on prices/quantities; unique `(order_id, menu_item_id)`. Upper limits are named constants validated in schemas — raising them means re-checking that order totals still fit `INTEGER`.
-- **Money is never a float.** Integer cents everywhere (DB, Python, JSON); every money field ends in `_cents`. Single currency (USD) from config.
+- **Money is never a float.** Integer cents everywhere (DB, Python, JSON); every money field ends in `_cents`. Single currency (USD).
 - **Totals are computed server-side** from current menu prices. Never trust a price or total sent by the client.
 - **Order placement is idempotent.** `POST /orders` requires an `Idempotency-Key` header, unique per customer. Same-key requests are serialized with `pg_advisory_xact_lock`, and the key is looked up **before** menu validation; a repeat with the same body returns the original order, a different body is `422`.
 - **Ownership is enforced in the service layer.** A customer only ever sees and acts on their own orders; a wrong-owner lookup returns `404`, not `403`, so IDs aren't confirmable.
@@ -69,9 +69,8 @@ Code should read like a person wrote it: descriptive names, short functions that
 
 - Secrets (JWT signing key, DB password) come from env vars via `pydantic-settings`. Code holds only development placeholders, which the app refuses when `ENVIRONMENT=production`. Real secrets are never committed, never logged.
 - Passwords are hashed with argon2 (`pwdlib`); never stored or logged in plain text. Hashing and verification run via `run_in_threadpool`.
-- JWT: short-lived access tokens; the algorithm is a code constant (`JWT_ALGORITHM`), never a setting, and is passed explicitly on decode; `exp` is required. The user's role and `is_active` are re-read from the DB, not trusted from the token. Refresh tokens are opaque, stored hashed, and rotated on every use via one atomic conditional `UPDATE`.
-- **Transactions:** service write methods end with an explicit `await session.commit()` before returning. The session dependency is `Depends(..., scope="function")`, never commits, and closing it discards anything uncommitted — a `yield` dependency's default exit runs after the response is sent. Security writes that must survive an error (revoking tokens on refresh reuse) are committed **before** raising.
-- Token issuance, rotation and revoke-all lock the user row (`SELECT … FOR UPDATE`) first, so they can't interleave per user.
+- JWT: short-lived access tokens; the algorithm is a code constant (`JWT_ALGORITHM`), never a setting, and is passed explicitly on decode; `exp` is required. The user's role and `is_active` are re-read from the DB, not trusted from the token.
+- **Transactions:** service write methods end with an explicit `await session.commit()` before returning. The session dependency is `Depends(..., scope="function")`, never commits, and closing it discards anything uncommitted — a `yield` dependency's default exit runs after the response is sent. Security writes that must survive an error are committed **before** raising.
 - All DB access goes through SQLAlchemy with bound parameters; no f-string SQL.
 - Order and user bigint ids never leave the server: routes, responses, tokens and pagination cursors use `public_id`. Base64 is not secrecy — never put an internal id in a cursor.
 - Response schemas are explicit allow-lists — never return ORM objects that could leak `hashed_password` or other users' data.
