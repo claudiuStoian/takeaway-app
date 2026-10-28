@@ -90,6 +90,8 @@ uv run python -m app.cli seed            # safe to re-run
 uv run uvicorn app.main:app --reload
 ```
 
+If `uv sync` fails on `psycopg-binary` and the Python it picked ends in `+freethreaded`, uv chose a free-threaded build, which psycopg has no wheel for. Run `uv sync --python 3.14+gil` instead (this needs a regular Python 3.14 installed).
+
 Create an admin (password is prompted; re-running for an existing admin changes nothing):
 
 ```bash
