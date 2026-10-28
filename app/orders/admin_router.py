@@ -32,6 +32,11 @@ async def list_orders(
     )
 
 
+@router.get('/{public_id}', response_model=AdminOrderResponse)
+async def get_order(session: SessionDep, _: AdminDep, public_id: UUID) -> AdminOrderResponse:
+    return await AdminOrderService.get(session, public_id)
+
+
 @router.post('/{public_id}/status', response_model=AdminOrderResponse)
 async def change_order_status(
     session: SessionDep, admin: AdminDep, public_id: UUID, request: OrderStatusUpdateRequest

@@ -17,20 +17,12 @@ class CatalogueSeedService:
 
         Checking for an empty table (not upserting by name) never overwrites admin edits.
         """
-        if cls._has_restaurants(session):
+        if session.scalar(select(exists().select_from(Restaurant))):
             return 0
-        restaurants = cls._load(seed_file)
+        restaurants = SEED_FILE_ADAPTER.validate_json(seed_file.read_bytes())
         session.add_all(cls._build_restaurant(seed) for seed in restaurants)
         session.commit()
         return len(restaurants)
-
-    @staticmethod
-    def _has_restaurants(session: Session) -> bool:
-        return session.scalar(select(exists().select_from(Restaurant))) or False
-
-    @staticmethod
-    def _load(seed_file: Path) -> list[RestaurantSeed]:
-        return SEED_FILE_ADAPTER.validate_json(seed_file.read_bytes())
 
     @staticmethod
     def _build_restaurant(seed: RestaurantSeed) -> Restaurant:

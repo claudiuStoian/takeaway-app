@@ -28,9 +28,10 @@ class UserSeedService:
 
         Demo passwords are public, so they are never seeded in production.
         """
-        if environment == Environment.PRODUCTION or cls._has_users(session):
+        has_users = session.scalar(select(exists().select_from(User)))
+        if environment == Environment.PRODUCTION or has_users:
             return 0
-        users = cls._load(seed_file)
+        users = SEED_FILE_ADAPTER.validate_json(seed_file.read_bytes())
         session.add_all(cls._build_user(seed) for seed in users)
         session.commit()
         return len(users)
@@ -46,14 +47,6 @@ class UserSeedService:
         session.add(cls._build_user(seed))
         session.commit()
         return True
-
-    @staticmethod
-    def _has_users(session: Session) -> bool:
-        return session.scalar(select(exists().select_from(User))) or False
-
-    @staticmethod
-    def _load(seed_file: Path) -> list[UserSeed]:
-        return SEED_FILE_ADAPTER.validate_json(seed_file.read_bytes())
 
     @staticmethod
     def _build_user(seed: UserSeed) -> User:

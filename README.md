@@ -47,7 +47,7 @@ Open the URL Vite prints and use the demo-login buttons. The token is kept in `s
 | Catalogue (public) | `GET /api/v1/restaurants` (`?cuisine=`) · `GET /api/v1/restaurants/{restaurant_id}/menu` |
 | Accounts | `POST /api/v1/auth/signup` · `POST /api/v1/auth/login` · `GET /api/v1/me` |
 | Orders (customer) | `POST /api/v1/orders` · `GET /api/v1/orders` · `GET /api/v1/orders/{public_id}` · `POST /api/v1/orders/{public_id}/cancel` |
-| Admin: orders | `GET /api/v1/admin/orders` (`?status=`, `?restaurant_id=`) · `POST /api/v1/admin/orders/{public_id}/status` · `GET /api/v1/admin/orders/{public_id}/history` |
+| Admin: orders | `GET /api/v1/admin/orders` (`?status=`, `?restaurant_id=`) · `GET /api/v1/admin/orders/{public_id}` · `POST /api/v1/admin/orders/{public_id}/status` · `GET /api/v1/admin/orders/{public_id}/history` |
 | Admin: menus | under `/api/v1/admin/restaurants/{restaurant_id}`: `GET /menu` · `POST /categories` · `PATCH /categories/{category_id}` · `POST /items` · `PATCH /items/{item_id}` |
 
 Lists return `{"items": [...], "next_cursor": "..."}`; pass `?cursor=` for the next page (`null` means the end) and `?limit=` (1–100, default 20). Errors use FastAPI's `{"detail": ...}` shape.

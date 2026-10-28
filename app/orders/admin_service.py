@@ -41,6 +41,15 @@ class AdminOrderService:
         )
 
     @classmethod
+    async def get(cls, session: AsyncSession, public_id: UUID) -> AdminOrderResponse:
+        query = build_order_query(Order.public_id == public_id).options(
+            selectinload(Order.customer)
+        )
+        if (order := await session.scalar(query)) is None:
+            raise OrderNotFound
+        return AdminOrderResponse.model_validate(order)
+
+    @classmethod
     async def change_status(
         cls, session: AsyncSession, admin: User, public_id: UUID, to_status: OrderStatus
     ) -> AdminOrderResponse:
