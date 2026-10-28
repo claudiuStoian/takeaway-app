@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { fetchRestaurants } from '@/lib/api'
 import { errorText } from '@/lib/format'
@@ -8,16 +8,20 @@ export function useRestaurants(cuisine: string) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const latestRequest = useRef(0)
 
   const load = useCallback(
     async (cursor: string | null) => {
+      // Responses can arrive out of order; only the latest request may update the list.
+      const request = ++latestRequest.current
       try {
         const page = await fetchRestaurants(cursor, cuisine)
+        if (request !== latestRequest.current) return
         setError(null)
         setRestaurants((prev) => (cursor ? [...prev, ...page.items] : page.items))
         setNextCursor(page.next_cursor)
       } catch (err) {
-        setError(errorText(err))
+        if (request === latestRequest.current) setError(errorText(err))
       }
     },
     [cuisine],

@@ -25,9 +25,17 @@ export function MenuPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let ignore = false
     fetchMenu(restaurantId)
-      .then(setMenu)
-      .catch((err) => setError(errorText(err)))
+      .then((menu) => {
+        if (!ignore) setMenu(menu)
+      })
+      .catch((err) => {
+        if (!ignore) setError(errorText(err))
+      })
+    return () => {
+      ignore = true
+    }
   }, [restaurantId])
 
   if (!menu) return <ErrorText error={error} />

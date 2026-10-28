@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ErrorText } from '@/components/ErrorText'
 import { OrderItems } from '@/components/OrderItems'
@@ -24,16 +24,20 @@ export function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const latestRequest = useRef(0)
 
   const load = useCallback(
     async (cursor: string | null) => {
+      // Responses can arrive out of order; only the latest request may update the list.
+      const request = ++latestRequest.current
       try {
         const page = await fetchAdminOrders(cursor, status, restaurantId)
+        if (request !== latestRequest.current) return
         setError(null)
         setOrders((prev) => (cursor ? [...prev, ...page.items] : page.items))
         setNextCursor(page.next_cursor)
       } catch (err) {
-        setError(errorText(err))
+        if (request === latestRequest.current) setError(errorText(err))
       }
     },
     [status, restaurantId],
