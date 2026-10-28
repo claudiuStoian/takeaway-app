@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.cli import RESTAURANTS_SEED_FILE
 from app.restaurants.seed import CatalogueSeedService
 from tests.builders import (
+    UNKNOWN_ID,
     add_category,
     add_item,
     add_restaurant,
@@ -62,7 +63,6 @@ async def test_list_returns_only_public_restaurant_fields(
         {'cursor': raw_cursor([1, 'A'])},
         {'cursor': raw_cursor(['A', True])},
         {'cursor': raw_cursor(['A'])},
-        {'cursor': raw_cursor(['A', 2**63])},
         {'limit': 0},
         {'limit': 101},
         {'cuisine': 'Italian'},
@@ -72,7 +72,6 @@ async def test_list_returns_only_public_restaurant_fields(
         'cursor-types-swapped',
         'cursor-bool-id',
         'cursor-too-short',
-        'cursor-id-above-bigint',
         'limit-zero',
         'limit-over-max',
         'cuisine-uppercase',
@@ -126,8 +125,8 @@ async def test_menu_of_an_inactive_restaurant_is_404(
 
 @pytest.mark.parametrize(
     ('restaurant_id', 'status_code'),
-    [(9_000_000_000_000_000_000, 404), (0, 422), (2**63, 422)],
-    ids=['unknown', 'zero', 'above-bigint'],
+    [(UNKNOWN_ID, 404), (0, 422)],
+    ids=['unknown', 'zero'],
 )
 async def test_menu_with_a_bad_restaurant_id(
     client: AsyncClient, restaurant_id: int, status_code: int

@@ -21,5 +21,5 @@ USER app
 EXPOSE 8000
 
 # api is reachable only through nginx, whose container IP isn't fixed.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", \
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", \
      "--proxy-headers", "--forwarded-allow-ips", "*"]

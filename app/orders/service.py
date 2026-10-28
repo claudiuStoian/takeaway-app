@@ -10,7 +10,6 @@ from sqlalchemy.orm import selectinload
 
 from app.auth.models import User
 from app.core.exceptions import ConflictError, InvalidInputError, NotFoundError
-from app.core.limits import MAX_ORDER_TOTAL_CENTS
 from app.core.pagination import InvalidCursor, decode_cursor, encode_cursor
 from app.orders.models import Order, OrderItem, OrderStatus, OrderStatusEvent
 from app.orders.schemas import OrderPageResponse, OrderPlaceRequest, OrderResponse
@@ -39,10 +38,6 @@ class RestaurantUnavailable(InvalidInputError):
 
 class MenuItemsUnavailable(InvalidInputError):
     detail = 'Some menu items are not available.'
-
-
-class OrderTotalTooLarge(InvalidInputError):
-    detail = 'Order total is too large.'
 
 
 class InvalidStatusTransition(ConflictError):
@@ -86,8 +81,6 @@ class OrderService:
         ]
         subtotal_cents = sum(item.unit_price_cents * item.quantity for item in items)
         total_cents = subtotal_cents + restaurant.delivery_fee_cents
-        if total_cents > MAX_ORDER_TOTAL_CENTS:
-            raise OrderTotalTooLarge
 
         order = Order(
             customer_id=customer.id,

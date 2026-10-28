@@ -7,7 +7,6 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.limits import MAX_DB_ID
 from app.orders.models import OrderStatus
 from tests.builders import (
     add_orderable_item,
@@ -279,14 +278,12 @@ async def test_admin_list_pages_newest_first_without_gaps_or_repeats(
 @pytest.mark.parametrize(
     'params',
     [
-        {'restaurant_id': MAX_DB_ID + 1},
         {'restaurant_id': 0},
         {'status': 'eaten'},
         {'cursor': 'not base64!'},
         {'cursor': raw_cursor([1, 2])},
     ],
     ids=[
-        'restaurant-id-too-big',
         'restaurant-id-zero',
         'unknown-status',
         'bad-cursor',

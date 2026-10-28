@@ -9,9 +9,6 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
-DB_POOL_SIZE = 5
-DB_MAX_OVERFLOW = 5
-
 NAMING_CONVENTION = {
     'ix': 'ix_%(column_0_label)s',
     'uq': 'uq_%(table_name)s_%(column_0_N_name)s',
@@ -26,12 +23,7 @@ class Base(DeclarativeBase):
     type_annotation_map = {str: Text, datetime: DateTime(timezone=True)}
 
 
-engine = create_async_engine(
-    settings.database_url,
-    pool_size=DB_POOL_SIZE,
-    max_overflow=DB_MAX_OVERFLOW,
-    pool_pre_ping=True,
-)
+engine = create_async_engine(settings.database_url, pool_pre_ping=True)
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False)
 
 

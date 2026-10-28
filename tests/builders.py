@@ -21,6 +21,8 @@ from app.orders.models import OrderStatus
 from app.restaurants.models import MenuCategory, MenuItem, Restaurant
 
 TEST_PASSWORD = 'correct-horse-battery'
+# No row ever gets this id: sequences in the kept test DB stay far below it.
+UNKNOWN_ID = 999_999_999
 
 ADMIN_PATHS_FROM_PENDING = {
     OrderStatus.PENDING: [],

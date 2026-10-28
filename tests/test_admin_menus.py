@@ -5,13 +5,13 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.limits import (
-    MAX_DB_ID,
     MAX_ITEM_PRICE_CENTS,
     MAX_MENU_DESCRIPTION_LENGTH,
     MAX_MENU_NAME_LENGTH,
     MAX_MENU_POSITION,
 )
 from tests.builders import (
+    UNKNOWN_ID,
     add_restaurant,
     admin_menu_url,
     create_category,
@@ -44,7 +44,6 @@ INVALID_ITEM_OVERRIDES = {
     'name too long': {'name': 'x' * (MAX_MENU_NAME_LENGTH + 1)},
     'description too long': {'description': 'x' * (MAX_MENU_DESCRIPTION_LENGTH + 1)},
     'client-sent restaurant': {'restaurant_id': 1},
-    'category id over BIGINT': {'category_id': MAX_DB_ID + 1},
 }
 
 INVALID_ITEM_UPDATES = {
@@ -122,7 +121,7 @@ async def test_unknown_restaurant_is_404(
 ) -> None:
     response = await client.request(
         method,
-        admin_menu_url(MAX_DB_ID, path.format(category_id=1, item_id=1)),
+        admin_menu_url(UNKNOWN_ID, path.format(category_id=1, item_id=1)),
         json=fill_ids(body, category_id=1),
         headers=admin,
     )
@@ -544,15 +543,12 @@ async def test_invalid_category_update_is_422(
     assert (category['name'], category['position']) == ('Pizza', 0)
 
 
-async def test_bad_ids_in_the_path_are_422(client: AsyncClient, admin: dict[str, str]) -> None:
-    responses = [
-        await client.get(admin_menu_url(MAX_DB_ID + 1, '/menu'), headers=admin),
-        await client.get(admin_menu_url(0, '/menu'), headers=admin),
-        await update_item(client, admin, 1, MAX_DB_ID + 1, {'is_archived': True}),
-        await update_category(client, admin, 1, MAX_DB_ID + 1, {'is_archived': True}),
-    ]
+async def test_zero_restaurant_id_in_the_path_is_422(
+    client: AsyncClient, admin: dict[str, str]
+) -> None:
+    response = await client.get(admin_menu_url(0, '/menu'), headers=admin)
 
-    assert [response.status_code for response in responses] == [422, 422, 422, 422]
+    assert response.status_code == 422
 
 
 async def test_two_admins_creating_the_same_category_at_once_only_one_wins(

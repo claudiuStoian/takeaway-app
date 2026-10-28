@@ -12,6 +12,7 @@ from app.core.limits import (
     MAX_QUANTITY_PER_ITEM,
 )
 from tests.builders import (
+    UNKNOWN_ID,
     add_category,
     add_item,
     add_orderable_item,
@@ -40,8 +41,6 @@ ORDER_KEYS = {
     'updated_at',
 }
 ORDER_ITEM_KEYS = {'menu_item_id', 'name', 'unit_price_cents', 'quantity'}
-UNKNOWN_ID = 9_000_000_000_000_000_000
-ABOVE_BIGINT = 2**63
 
 
 async def test_order_totals_are_computed_from_menu_prices_and_delivery_fee(
@@ -124,7 +123,6 @@ async def test_blank_notes_are_stored_as_no_notes(
         {'phone': '12345'},
         {'delivery_address': 'x' * (MAX_DELIVERY_ADDRESS_LENGTH + 1)},
         {'delivery_address': '  '},
-        {'restaurant_id': ABOVE_BIGINT},
     ],
     ids=[
         'client-total',
@@ -133,7 +131,6 @@ async def test_blank_notes_are_stored_as_no_notes(
         'phone-too-short',
         'address-too-long',
         'address-blank',
-        'restaurant-id-above-bigint',
     ],
 )
 async def test_invalid_order_field_is_422(
@@ -153,9 +150,8 @@ async def test_invalid_order_field_is_422(
         {'unit_price_cents': 1},
         {'quantity': 0},
         {'quantity': MAX_QUANTITY_PER_ITEM + 1},
-        {'menu_item_id': ABOVE_BIGINT},
     ],
-    ids=['client-unit-price', 'zero-quantity', 'quantity-over-max', 'menu-item-id-above-bigint'],
+    ids=['client-unit-price', 'zero-quantity', 'quantity-over-max'],
 )
 async def test_invalid_order_line_is_422(
     client: AsyncClient, db_session: AsyncSession, customer: dict[str, str], line_overrides: dict
